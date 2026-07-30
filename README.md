@@ -13,6 +13,12 @@ Sierra 用 SCI 引擎重製的版本**。
 說明書全文整理在 [`manual_cht/README.md`](manual_cht/README.md)，含當年的故事背景、
 操作方式、物品與動作指令對照表。
 
+## 宣傳影片
+
+[▶ 下載影片](https://github.com/wicanr2/kq1-dos-cht/releases/latest/download/kq1-cht-promo.mp4)
+（47 秒，1280×960）——AGI 1984 與 SCI 1990 兩版原貌，加上三組英中對照（對白／選單／狀態列）。
+配樂是遊戲原本的音樂，用 Roland MT-32 即時側錄。
+
 ## 畫面
 
 | 1990 SCI 重製版 | |
@@ -45,6 +51,10 @@ Sierra 用 SCI 引擎重製的版本**。
 
 - Linux：`KQ1-CHT-patch-x86_64.AppImage`
 - Windows：`KQ1-CHT-patch-win64.zip`（解開後跑 `.bat`）
+- macOS：`KQ1-CHT-patch-macos-universal.dmg` 或 `.tar.gz`（universal，arm64 + x86_64）
+
+macOS 首次執行要先解除隔離：`xattr -dr com.apple.quarantine <路徑>/ScummVM.app`，
+中文資料在 `ScummVM.app/Contents/Resources/cht-data`（加入遊戲後把它設成「額外路徑」）。
 
 patch 版**不含任何遊戲資源**，只有中文化過的 ScummVM 引擎 + 中文資料（譯文表、字型、
 標題疊圖）。
