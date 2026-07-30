@@ -113,7 +113,7 @@ index 81421b47..930db287 100644
  uint16 AgiEngine::processAGIEvents() {
  	ScreenObjEntry *screenObjEgo = &_game.screenObjTable[SCREENOBJECTS_EGO_ENTRY];
 diff --git a/engines/agi/graphics.cpp b/engines/agi/graphics.cpp
-index 1bb1d202..5938092b 100644
+index 1bb1d202..77fee641 100644
 --- a/engines/agi/graphics.cpp
 +++ b/engines/agi/graphics.cpp
 @@ -26,6 +26,7 @@
@@ -150,7 +150,7 @@ index 1bb1d202..5938092b 100644
  	if (_font->isFontHires() || forceHires) {
  		// Upscaling enable
  		_upscaledHires = DISPLAY_UPSCALED_640x400;
-@@ -1157,6 +1170,146 @@ void GfxMgr::drawDisplayRectCGA(int16 x, int16 y, int16 width, int16 height, byt
+@@ -1157,6 +1170,147 @@ void GfxMgr::drawDisplayRectCGA(int16 x, int16 y, int16 width, int16 height, byt
  /**
   * Draw a character to the display screen using text row and column coordinates
   */
@@ -239,7 +239,8 @@ index 1bb1d202..5938092b 100644
 +// 若 picNr 是標題 pic（首張顯示的 pic），把「幻想空間」中文標題疊到 display 上。
 +// 只在 hi-res(640x400) 顯示模式生效；索引 0xFF 為透明。
 +void GfxMgr::drawChtTitleOverlay(int16 picNr) {
-+	if (!_chtEnabled || !_chtTitleOverlay)
++	// _chtLangOn: F8 switched to English, so skip the Chinese title too.
++	if (!_chtEnabled || !_chtLangOn || !_chtTitleOverlay)
 +		return;
 +	if (_chtTitlePic == -1)
 +		_chtTitlePic = picNr;     // 首張 pic 視為標題

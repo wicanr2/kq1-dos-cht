@@ -119,6 +119,29 @@ index fe35fd19..4b303585 100644
  				int slen = tempsource.size();
  				int extralen = strLength - slen;
  				assert((target - targetbuf) + extralen <= maxsize);
+diff --git a/engines/sci/event.cpp b/engines/sci/event.cpp
+index 145d32f1..a78a0cc4 100644
+--- a/engines/sci/event.cpp
++++ b/engines/sci/event.cpp
+@@ -204,6 +204,18 @@ SciEvent EventManager::getScummVMEvent() {
+ 	bool found;
+ 	do {
+ 		found = em->pollEvent(ev);
++		// CHT: F8 toggles between the Chinese translation and the original English so players
++		// can compare wording. Consume it here rather than letting it reach the game — SCI
++		// scripts bind F8 themselves in some games. Only active while a translation is loaded,
++		// so English builds keep F8's original behaviour. The current text box is left alone
++		// (SCI ties box contents to transient port state); the toggle shows on the next line.
++		if (found && ev.type == Common::EVENT_KEYDOWN && ev.kbd.keycode == Common::KEYCODE_F8 &&
++		    g_sci->getLanguage() == Common::ZH_TWN) {
++			g_sci->toggleChtLang();
++			found = false;
++			ev.type = Common::EVENT_INVALID;
++			continue;
++		}
+ 	} while (found && ev.type == Common::EVENT_MOUSEMOVE);
+ 
+ 	Common::Point mousePos;
 diff --git a/engines/sci/graphics/animate.cpp b/engines/sci/graphics/animate.cpp
 index 5c29ebc5..72f51223 100644
 --- a/engines/sci/graphics/animate.cpp
@@ -200,7 +223,7 @@ index cdabf3bf..a20d3c91 100644
  	// Draw the black line again
  	_paint16->fillRect(_ports->_menuLine, 1, 0);
 diff --git a/engines/sci/graphics/paint16.cpp b/engines/sci/graphics/paint16.cpp
-index 2e901e8d..446cbaa2 100644
+index 2e901e8d..3d32478e 100644
 --- a/engines/sci/graphics/paint16.cpp
 +++ b/engines/sci/graphics/paint16.cpp
 @@ -19,6 +19,8 @@
@@ -232,7 +255,7 @@ index 2e901e8d..446cbaa2 100644
  	// Set up custom per-picture palette mod
  	doCustomPicPalette(_screen, pictureId);
  
-@@ -106,6 +112,113 @@ void GfxPaint16::drawPicture(GuiResourceId pictureId, bool mirroredFlag, bool ad
+@@ -106,6 +112,115 @@ void GfxPaint16::drawPicture(GuiResourceId pictureId, bool mirroredFlag, bool ad
  
  	// Reset custom per-picture palette mod
  	_screen->setCurPaletteMapValue(0);
@@ -243,7 +266,9 @@ index 2e901e8d..446cbaa2 100644
 +	// overlay onto the visual plane (see drawChtTitleOverlay). Title sparkle cels animate on
 +	// top every frame, so we keep _chtTitleActive and re-assert the overlay in drawCelAndShow.
 +	const bool chtTitleWasActive = _chtTitleActive;
-+	if (g_sci->getLanguage() == Common::ZH_TWN) {
++	// Follows the F8 language toggle too: showing a Chinese title over an otherwise English
++	// screen would be inconsistent.
++	if (g_sci->getLanguage() == Common::ZH_TWN && g_sci->chtLangOn()) {
 +		if (pictureId == 777)
 +			_chtTitleActive = true;      // title screen drawn
 +		else if (pictureId != 902)
@@ -346,7 +371,7 @@ index 2e901e8d..446cbaa2 100644
  }
  
  // This one is the only one that updates screen!
-@@ -121,6 +234,11 @@ void GfxPaint16::drawCelAndShow(GuiResourceId viewId, int16 loopNo, int16 celNo,
+@@ -121,6 +236,11 @@ void GfxPaint16::drawCelAndShow(GuiResourceId viewId, int16 loopNo, int16 celNo,
  
  		drawCel(view, loopNo, celNo, celRect, priority, paletteNo, scaleX, scaleY, scaleSignal);
  
@@ -749,7 +774,7 @@ index 94d96a6e..b4c689eb 100644
  	graphics/fontsjis.o \
  	graphics/macfont.o \
 diff --git a/engines/sci/sci.cpp b/engines/sci/sci.cpp
-index b4d28b79..b83a6818 100644
+index b4d28b79..0710d021 100644
 --- a/engines/sci/sci.cpp
 +++ b/engines/sci/sci.cpp
 @@ -19,6 +19,9 @@
@@ -825,7 +850,7 @@ index b4d28b79..b83a6818 100644
  #ifdef ENABLE_SCI32
  	if (getSciVersion() >= SCI_VERSION_2) {
  		// SCI32 graphic objects creation
-@@ -831,7 +876,90 @@ const char *SciEngine::getGameIdStr() const {
+@@ -831,7 +876,93 @@ const char *SciEngine::getGameIdStr() const {
  	return _gameDescription->gameId;
  }
  
@@ -854,6 +879,9 @@ index b4d28b79..b83a6818 100644
 +}
 +
 +const char *SciEngine::getChtTranslation(const char *original) const {
++	// F8 toggled to English: report "no translation" so every caller falls back to the original.
++	if (!_chtLangOn)
++		return nullptr;
 +	if (_chtTranslation.empty() || !original)
 +		return nullptr;
 +	Common::HashMap<Common::String, Common::String>::const_iterator it = _chtTranslation.find(sciChtNormKey(original));
@@ -917,7 +945,7 @@ index b4d28b79..b83a6818 100644
  }
  
 diff --git a/engines/sci/sci.h b/engines/sci/sci.h
-index d9361700..0ce3bb5d 100644
+index d9361700..b35960ca 100644
 --- a/engines/sci/sci.h
 +++ b/engines/sci/sci.h
 @@ -26,6 +26,8 @@
@@ -929,7 +957,7 @@ index d9361700..0ce3bb5d 100644
  #include "sci/engine/vm_types.h"	// for Selector
  #include "sci/debug.h"	// for DebugState
  #include "sci/detection.h" // Shared code between detection and engine
-@@ -185,6 +187,15 @@ public:
+@@ -185,6 +187,26 @@ public:
  	const char *getGameIdStr() const;
  	Common::Language getLanguage() const;
  
@@ -942,14 +970,26 @@ index d9361700..0ce3bb5d 100644
 +	const char *getChtTranslation(const char *original) const;
 +	void loadChtTranslation();
 +
++	/**
++	 * F8 toggles between the Chinese translation and the original English, so players can
++	 * check the wording against the 1990 original. Deliberately a separate flag from
++	 * "is the translation loaded at all" — the language selection also gates Big5 drawing,
++	 * so reusing it here would change how text is rendered, not just which text is shown.
++	 * SCI keeps the text a script already handed to the graphics layer, so a toggle takes
++	 * effect on the next line rather than redrawing the current box.
++	 */
++	bool chtLangOn() const { return _chtLangOn; }
++	void toggleChtLang() { _chtLangOn = !_chtLangOn; }
++
  	/**
  	 * Returns true if the game's language direction is Right To Left.
  	 * RTL support did not exist in the original SCI engine.
-@@ -406,6 +417,7 @@ private:
+@@ -406,6 +428,8 @@ private:
  
  	const ADGameDescription *_gameDescription;
  	const SciGameId _gameId;
-+	Common::HashMap<Common::String, Common::String> _chtTranslation; /**< CHT: English -> Big5 */
++	Common::HashMap<Common::String, Common::String> _chtTranslation;  /**< CHT: English -> Big5 */
++	bool _chtLangOn = true;   /**< CHT: F8 toggle; false => show the original English */
  	ResourceManager *_resMan; /**< The resource manager */
  	ScriptPatcher *_scriptPatcher; /**< The script patcher */
  	EngineState *_gamestate;

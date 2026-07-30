@@ -41,8 +41,14 @@
 - [x] 合併 master + 逐批驗證（key/控制序列/Big5）+ 譯名收斂表 `translation/converge.tsv`
 - [x] 烘倚天字型 → `dist-cht/`（16×15，1960 字；hi-res 24×24 已停用，見下方決策）
 - [x] 中文標題疊圖（`kq1_title.ovl`，標題 pic = **777**，已實機驗證）
-- [ ] 完整 playtest（目前驗過：標題、標題選單、場景、parser 對白、狀態列；還沒驗道具欄、
-      存讀檔對話框、開場長旁白 crawl、片尾字幕）
+- [x] playtest：標題、標題選單、場景、parser 對白、開場旁白、狀態列、道具欄（Ctrl+I，
+      「你身上什麼也沒帶！」）、F8 雙向切換都實機驗過
+- [ ] **遊戲內存讀檔對話框沒實機驗到**：F5/F7 被 ScummVM 的全域快捷鍵攔走（開的是 ScummVM
+      自己的存檔 GUI），滑鼠拉 SCI0 選單在 Xvfb 下也叫不出來。譯文本身在表裡
+      （`Save a Game`→儲存進度、`Restore a Game`→讀取進度、`Type the description…`→請輸入
+      這個存檔的說明文字。），且與已驗證的道具欄走同一條 `GfxText16` 路徑，但**沒截到畫面
+      就不算驗過**——留給實機玩的時候確認。
+- [ ] 開場長旁白 crawl、片尾字幕（同樣還沒走到）
 
 ## 4. AGI 軌（1984/1987 原版）
 
@@ -51,10 +57,10 @@
 - [x] 8 批翻完，AGI 軌覆蓋 97%
 - [x] AGI 引擎 patch（沿用 PQ1 的 `0001-agi-cht-zh_twn.patch`，資源檔名改 kq1_*）
 - [x] 實機驗證：狀態列「得分：0 / 158」「聲音：開」、對白框中文都正常
-- [ ] AGI 標題疊圖：引擎端已改讀 `kq1_title_agi.ovl`（格式 magic `CHTO` + version + palType +
-      BE 的 OX/OY/OW/OH），但 **`dist-cht/` 還沒有這個檔**，現行包裡的 AGI 軌開機仍會印一行
-      `kq1_title.ovl magic 不符，略過`。無功能影響（玩家看不到），做 AGI 疊圖時一併重打包。
-- [ ] F8 中英切換（雙軌）
+- [x] AGI 標題疊圖（`tools/build_title_overlay_agi.py` 烘倚天 16×15 金字+黑描邊，
+      display 座標 (286,3)，疊在 KING'S QUEST 橫幅上方，已實機驗證）
+- [x] F8 中英切換：AGI 端原本就有（PQ1 patch 帶來的），這次補上 SCI 端
+      （`event.cpp` 事件入口攔截並消費 F8 + `_chtLangOn` 旗標，標題疊圖也跟著切）
 
 ## 5. 打包／交付
 
