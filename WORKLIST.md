@@ -60,10 +60,12 @@
 
 - [x] Linux AppImage + Windows mingw，各出 patch 版 + full 版（一包含 AGI/SCI 兩個 target）
 - [x] README.md（引言、雙軌說明、截圖、安裝、技術說明、已知限制）
-- [ ] macOS CI（需要先建 GitHub repo）
+- [x] macOS CI（GitHub Actions macos-14，universal arm64+x86_64，run 30547816668 success）
+- [x] GitHub repo `wicanr2/kq1-dos-cht`（public，patch-only）
+- [x] Release v1.0：三平台 patch 包 + 宣傳影片
+- [x] 宣傳影片 `promo/kq1-cht-promo.mp4`（47s／1280×960，三格對照，MT-32 側錄原版配樂）
 - [ ] MT-32 ROM 僅進本機 full 包，`.gitignore` 排除 `*.ROM`
-- [ ] GitHub repo `kq1-dos-cht`（**建 repo／push／Release 需先取得使用者確認**）
-- [ ] README 圖文並茂 + 中文手冊要點 + 第三波資料引言
+- [x] README 圖文並茂 + 中文手冊整理 + 第三波資料引言
 
 ## 決策紀錄
 
