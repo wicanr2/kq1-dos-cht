@@ -34,3 +34,7 @@ tools/.cache/
 # 抽字中間產物（可用 tools/extract_*.py 從自己的遊戲重生；純英文原文 dump 不入庫）
 translation/skeleton_*.tsv
 translation/agi_prefilled.tsv
+
+# 宣傳片素材與成品（影片放 Release assets，不進 repo）
+promo/
+dist-macos/
