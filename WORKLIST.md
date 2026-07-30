@@ -48,7 +48,11 @@
       （`Save a Game`→儲存進度、`Restore a Game`→讀取進度、`Type the description…`→請輸入
       這個存檔的說明文字。），且與已驗證的道具欄走同一條 `GfxText16` 路徑，但**沒截到畫面
       就不算驗過**——留給實機玩的時候確認。
-- [ ] 開場長旁白 crawl、片尾字幕（同樣還沒走到）
+- [x] crawl 型長字串（開場旁白、片尾字幕這類「單一字串內含硬換行」的段落）改用**靜態核對**
+      涵蓋：掃 `script.*`／`text.*` 裡所有含硬換行的長字串共 15 則，逐則用正規化 key 比對譯文表，
+      只有 1 則不在表內——`Free Heap: %u Bytes ...`，是除錯用的記憶體統計，玩家看不到。
+      這比逐一 playtest 涵蓋得更完整（SQ3 那種「逐行工具把 crawl 拆裂導致整段漏譯」在這裡沒發生）。
+- [ ] 片尾字幕的**實機**畫面仍未走到（要通關），但其字串已在譯文表內且經上面的靜態核對涵蓋
 
 ## 4. AGI 軌（1984/1987 原版）
 
@@ -60,7 +64,11 @@
 - [x] AGI 標題疊圖（`tools/build_title_overlay_agi.py` 烘倚天 16×15 金字+黑描邊，
       display 座標 (286,3)，疊在 KING'S QUEST 橫幅上方，已實機驗證）
 - [x] F8 中英切換：AGI 端原本就有（PQ1 patch 帶來的），這次補上 SCI 端
-      （`event.cpp` 事件入口攔截並消費 F8 + `_chtLangOn` 旗標，標題疊圖也跟著切）
+      （`event.cpp` 事件入口攔截並消費 F8 + `_chtLangOn` 旗標，標題疊圖也跟著切）。
+      雙軌都實機驗過：AGI 當前訊息框就地變英文、SCI 下一句生效，再按一次都切得回來。
+      **小限制**：AGI 的狀態列（得分／聲音）是 `systemui.cpp` 在建構子裡按語言寫死的字串，
+      不走內容查表，所以 F8 切英文時它仍是中文。要修得把那幾個字串改成每次繪製時決定，
+      為了對照原文這點小殘留不值得動，先記著。
 
 ## 5. 打包／交付
 
@@ -70,7 +78,7 @@
 - [x] GitHub repo `wicanr2/kq1-dos-cht`（public，patch-only）
 - [x] Release v1.0：三平台 patch 包 + 宣傳影片
 - [x] 宣傳影片 `promo/kq1-cht-promo.mp4`（47s／1280×960，三格對照，MT-32 側錄原版配樂）
-- [ ] MT-32 ROM 僅進本機 full 包，`.gitignore` 排除 `*.ROM`
+- [x] MT-32 ROM 僅進本機 full 包（`dist-all/`），`.gitignore` 排除 `*.ROM`，三個 patch 包解開後 `*.ROM` 零命中
 - [x] README 圖文並茂 + 中文手冊整理 + 第三波資料引言
 
 ## 決策紀錄
