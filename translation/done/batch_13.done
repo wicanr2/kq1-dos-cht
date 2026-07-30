@@ -1,0 +1,130 @@
+This tricky little dwarf is quite interested in you!  To be exact, he would like to see what items of value you may be carrying.	這個狡猾的小矮人對你很感興趣！說得精確一點，他想瞧瞧你身上帶著什麼值錢的東西。
+Looks like the dwarf is running off.  Did he take anything?	矮人似乎要逃跑了。他有沒有拿走什麼東西？
+Talking to this dwarf is a waste of breath.  He's only interested in what you've got in your pockets.	跟這矮人講話只是白費唇舌，他只在乎你口袋裡裝了什麼。
+The dwarf is too fast for you to catch.	矮人的動作太快，你追不上他。
+The dwarf, startled by your sudden disappearance, runs away.	矮人被你突然消失的舉動嚇了一跳，拔腿逃走了。
+You don't see the %s	你沒看見%s
+You're not close enough.	你離得不夠近。
+The %s looks like any other %s.	%s看起來就和其他%s一樣。
+The %s will not move.	%s不會動。
+You cannot get the %s.	你沒辦法拿取%s。
+You cannot open the %s.	你沒辦法打開%s。
+You cannot close the %s.	你沒辦法關閉%s。
+The %s has no smell.	%s沒有味道。
+You cannot move the %s.	你沒辦法移動%s。
+You wouldn't want to eat the %s.	你不會想吃%s。
+You can't climb the %s.	你沒辦法爬上%s。
+The %s has nothing to say.	%s沒什麼好說的。
+You're not facing the %s.	你沒有面對著%s。
+%ssg.dir	%ssg.dir
+New save-game directory:	新的存檔目錄：
+%s is not a valid directory	%s 不是有效的目錄
+You must type a description for the game.	你必須輸入這個存檔的說明文字。
+File: %s	檔案：%s
+Your save game disk is full. You must either use another disk or save over an existing saved game.	你的存檔磁片已滿。你必須換一張磁片，或覆蓋現有的存檔。
+That game was saved under a different interpreter. It cannot be restored.	這個存檔是用不同的直譯器儲存的，無法讀取。
+I don't understand "%s".	我聽不懂「%s」。
+That doesn't appear to be a proper sentence.	這句話看起來不太像個完整的句子。
+That sentence doesn't make sense.	這句話沒有意義。
+You've left me responseless.	你讓我無言以對。
+Please insert your %s disk in drive %s.	請將你的 %s 磁片插入 %s 磁碟機。
+King's Quest I SCI  Designed by: Roberta Williams  Version %s Copyright 1990 Sierra On-Line, Inc.	國王密令 I SCI  設計：Roberta Williams  版本 %s Copyright 1990 Sierra On-Line, Inc.
+King's Quest I SCI  Illustrated by: JEFF CROWE, CINDY WALKER and JENNIFER SHONTZ  Programmed by: JERRY SHAW, GARY KAMIGAWACHI RANDY MACNEILL, RAOUL SAID, CHAD BYE, OLIVER BRELSFORD and MARK WILDEN  Original Music by: KEN ALLEN 	國王密令 I SCI  美術：JEFF CROWE, CINDY WALKER and JENNIFER SHONTZ  程式：JERRY SHAW, GARY KAMIGAWACHI RANDY MACNEILL, RAOUL SAID, CHAD BYE, OLIVER BRELSFORD and MARK WILDEN  原創音樂：KEN ALLEN
+King's Quest I SCI  Development System by: JEFF STEPHENSON, ROBERT E. HEITMAN, PABLO GHENIS, JOHN HARTIN, DAN FOY, LARRY SCOTT, JOHN RETTIG, CORINNA ABDUL, COREY COLE, MARK HOOD and ERIC HART  Quality Assurance by: CHRIS CARR and the rest of the gang.	國王密令 I SCI  開發系統：JEFF STEPHENSON, ROBERT E. HEITMAN, PABLO GHENIS, JOHN HARTIN, DAN FOY, LARRY SCOTT, JOHN RETTIG, CORINNA ABDUL, COREY COLE, MARK HOOD and ERIC HART  品質保證：CHRIS CARR 與其餘團隊成員。
+DURING THE GAME:  ESC opens and closes the menus,    which show additional shortcuts.  IN DIALOG WINDOWS:  Your current choice is outlined.  Tab and Shift-Tab move between    choices.  ESC always cancels.  IN TYPING WINDOWS:  Arrows, Home, and End move the    cursor.  Ctrl-C clears the line.	遊戲進行中：  ESC 鍵可開啟、關閉選單，    選單會顯示更多快捷鍵。  對話視窗中：  目前選取的項目會以外框標示。  Tab 與 Shift-Tab 可在選項間    切換。  ESC 一律可用來取消。  輸入視窗中：  方向鍵、Home、End 可移動    游標。  Ctrl-C 可清除整行文字。
+You are unable to duck here.	你在這裡沒辦法蹲下。
+You have no reason to duck - nobody can see you while you're invisible.	你沒有理由蹲下——你隱形的時候沒有人看得到你。
+You can't jump here.	你在這裡沒辦法跳躍。
+Very well, I shall wait until you are ready to resume our adventure again.	好吧，我會等你準備好，再繼續我們的冒險。
+This is not a good time to rummage through your belongings.  Try again a little later.	現在不是翻找你隨身物品的好時機。晚一點再試試看。
+You are ducking.	你正蹲著。
+You'll have to try that when you're on your feet.	你得先站起來才能這麼做。
+As you jump, the ring slips off your finger, and you are visible again.	你跳起來的時候，戒指從手指上滑落，你又現出原形了。
+As you jump, the ring slips off your finger.	你跳起來的時候，戒指從手指上滑落了。
+%s [Collection of size %d]	%s〔大小為 %d 的 Collection〕
+%s [List of size %d]	%s〔大小為 %d 的 List〕
+%s [Set of size %d]	%s〔大小為 %d 的 Set〕
+Turn Off	關閉
+Turn On	開啟
+Debug	除錯
+This large ceramic bowl is now empty.	這只大陶碗現在是空的。
+This large ceramic bowl is now filled with a savory beef stew.	這只大陶碗現在裝滿了香濃的牛肉燉肉。
+Unknown word	未知的字詞
+Couldn't parse	無法解析
+No response	沒有回應
+King's Quest I	King's Quest I
+ Dagger 	 短刀 
+This is a fine silver dagger, with a very sharp edge!	這是一把精美的銀製短刀，刀刃十分鋒利！
+ Chest 	 金盒子 
+This Magic chest, one of the three lost treasures of Daventry, is always filled with gold coins.	這只金盒子是戴凡確王國失落的三件寶物之一，裡頭永遠裝滿了金幣。
+ Carrot 	 胡蘿蔔 
+This looks like an ordinary carrot.	這看起來是一根普通的胡蘿蔔。
+This is a simple gold key.	這是一把樸素的金鑰匙。
+There is a message written on the note: "Sometimes it is wise to think backwards."	紙條上寫著一段話：「有時候，反過來想才是明智之舉。」
+ Magic Ring 	 魔戒 
+Your hand tingles slightly as you look at this jewelled ring.	你看著這枚鑲著寶石的戒指，手心微微感到一陣刺麻。
+ Four-leaf Clover 	 幸運草 
+You are holding a large four-leaf clover.	你手裡拿著一株碩大的幸運草。
+ Ceramic Bowl 	 陶碗 
+Inscribed on the inside of this empty ceramic bowl is the word "Fill."	這只空陶碗內側刻著「裝滿」兩個字。
+ Empty Water Bucket 	 空水桶 
+You are holding an empty wooden bucket.	你手裡拿著一個空的木桶。
+ Pebbles 	 鵝卵石 
+You have a pocketful of smooth, rounded pebbles.	你口袋裡裝滿了光滑圓潤的鵝卵石。
+ Leather Slingshot 	 皮製投石器 
+This is a small but sturdy slingshot.	這是一把小巧但堅固的投石器。
+ Pouch 	 皮袋 
+You are holding a plain leather pouch.	你手裡拿著一只樸素的皮袋。
+ Sceptre 	 王杖 
+This jewelled sceptre belongs to the King of the Leprechauns.	這根鑲滿寶石的王杖，屬於地穴人國王所有。
+ Cheese 	 乳酪 
+This is an extremely fragrant piece of Swiss cheese.	這是一塊香氣濃郁的瑞士乳酪。
+ Magic Mirror 	 魔鏡 
+This is the magic mirror, one of the three treasures of Daventry.	這面魔鏡是戴凡確王國三件寶物之一。
+ Gold Egg 	 金蛋 
+You are holding a lovely golden egg.	你手裡拿著一顆美麗的金蛋。
+ Magic Shield 	 靈盾 
+This is the magic shield, one of the three treasures of Daventry.	這面靈盾是戴凡確王國三件寶物之一。
+ Fiddle 	 小提琴 
+This is the woodcutter's old fiddle.	這是樵夫的那把舊小提琴。
+You are holding an ordinary walnut.	你手裡拿著一顆普通的胡桃。
+ Mushroom 	 蘑菇 
+This is a small, unusual-looking mushroom.	這是一朵外形奇特的小蘑菇。
+ Beans 	 豆子 
+You are holding a handful of small beans.	你手裡拿著一把小豆子。
+ Full Water Bucket 	 裝滿水的水桶 
+This old wooden bucket is now filled with clear water.	這個老舊的木桶現在裝滿了清水。
+Restore	讀取
+ Restart 	 重新開始 
+ Pebble 	 鵝卵石 
+Ripple	漣漪
+A sturdy bridge has been built here to span the moat.	這裡架著一座堅固的橋樑，橫跨護城河。
+Massive turrets, from which the guards can defend the castle, stretch to the sky above.	巨大的城樓高聳入雲，衛兵可以在上頭防守城堡。
+The trees around the castle are tall and old; they were just as tall back when King Edward was just a young prince!	城堡四周的樹木高大又古老；早在愛德華國王還是個年輕王子的時候，它們就已經一樣高聳了！
+The moving rock rolls downhill...and right into you.   A crushing defeat.	這顆會滾動的石頭滾下山坡……正好撞上你。這是一場毀滅性的失敗。
+This rock is less distinctive than the one next to it.	這顆石頭沒有它旁邊那顆來得顯眼。
+There is a dense grove of trees here.	這裡有一片茂密的樹林。
+This is a serene mountain lake with a small beach of pebbles on its edge.	這是一座寧靜的山中湖泊，湖畔有一小片鵝卵石灘。
+On the beach are some smooth pebbles.	灘上有一些光滑的鵝卵石。
+There are many lush trees surrounding the lake.	湖泊四周長滿了茂盛的樹木。
+An old, dignified oak tree rests near the shore of the lake.	一棵古老而莊嚴的橡樹，靜靜佇立在湖畔附近。
+big rock	大石頭
+The roots of the oak are entwined around this craggy cluster of rocks.	橡樹的樹根盤繞著這叢嶙峋的岩石。
+small rock	小石頭
+A boulder sits at the side of lake, the water lapping gently against its sides.	一塊巨石座落在湖邊，湖水輕輕拍打著它的側面。
+The roots of the oak spread out here to soak up water from the moist earth.	橡樹的樹根在這裡向外伸展，從濕潤的泥土中吸收水分。
+A totally typical example of the trees in this forest.	這是這片森林裡再典型不過的一棵樹。
+You've found a bush, but there isn't a quail in the game.	你發現了一叢灌木，不過遊戲裡並沒有鵪鶉。
+A distinctively common tree sits near the shore of the lake.	一棵格外平凡的樹，佇立在湖畔附近。
+large_tree	large_tree
+large_tree1	large_tree1
+large_tree2	large_tree2
+large_tree3	large_tree3
+large_tree4	large_tree4
+large_tree5	large_tree5
+You can just see the northern edge of a nearby lake.	你隱約能看見附近湖泊的北緣。
+There's a single large rock sitting off to the side.	一旁孤零零地擺著一塊大石頭。
+A majestic old tree stands nearby.	附近矗立著一棵雄偉的老樹。
+This is a beautiful little lake.	這是一座美麗的小湖。
+small tree	小樹
+This is just one of the many small trees adorning Daventry's countryside.	這只是戴凡確王國鄉間，眾多點綴景色的小樹之一。

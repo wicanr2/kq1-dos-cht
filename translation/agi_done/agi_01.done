@@ -1,0 +1,130 @@
+?	?
+chest	金盒子
+carrot	胡蘿蔔
+key	鑰匙
+note	紙條
+magic ring	魔戒
+fourleaf clover	幸運草
+ceramic bowl	陶碗
+full bowl	裝滿的碗
+water bucket	水桶
+full bucket	裝滿的水桶
+pebbles	鵝卵石
+leather slingshot	皮製投石器
+pouch of diamonds	鑽石皮袋
+pouch	皮袋
+cheese	乳酪
+magic mirror	魔鏡
+shield	靈盾
+fiddle	小提琴
+walnut	胡桃
+mushroom	蘑菇
+beans	魔豆
+water	水
+You splash around in the water for a while but seem  to have forgotten how to swim. Unfortunately, you drown.	你在水裡撲騰了一會兒，卻好像忘記了怎麼游泳。很不幸，你淹死了。
+Where do you think it could be?	你覺得它會在哪裡呢？
+KQ1	KQ1
+You feel a stretching sensation... Oh, you're back to your original size.	你感覺到一陣伸展感……哦，你恢復原本的大小了。
+You're too busy right now to rub the ring.	你現在正忙著別的事，沒空摩擦戒指。
+There is no reason to do that now.	現在沒有理由這麼做。
+As soon as you swallow the first bite, you have this strange shrinking feeling...  It's true!  You are now no bigger than a mouse!	你才吞下第一口，就感覺到一股奇怪的收縮感……真的沒錯！你現在變得比老鼠還小！
+You need to be closer to the water if you want to swim.	你得靠近水邊一點，才能游泳。
+VERSION 2.0F	VERSION 2.0F
+The goat quickly eats the carrot and disappears.	山羊很快吃掉胡蘿蔔，接著就消失了。
+Now is not a good time to try and eat the mushroom.	現在不是吃蘑菇的好時機。
+You do not have a bowl.	你身上沒有碗。
+It is not nice to tease the goat.	捉弄山羊可不太好。
+You are not carrying it.	你身上沒有帶著它。
+There is no reason to drop it.	沒有理由把它丟掉。
+You need to be in water to swim.	你得先進到水裡才能游泳。
+>	>
+You do not have any stew.	你身上沒有燉肉。
+The stew is chock full of vegetables and meat.	這碗燉肉裡滿滿都是蔬菜和肉。
+You already have a full bowl of stew.	你已經有一碗裝滿的燉肉了。
+The bowl fills with the delicious stew, but the woodcutters are unaware of it.	碗裡裝滿了美味的燉肉，但樵夫夫婦渾然不覺。
+After uttering that strange word, the bowl starts quivering and immediately fills up with a delicious, hot stew.	你說出那個奇怪的字後，碗開始顫動，隨即裝滿了熱騰騰、美味的燉肉。
+It is very inconsiderate to eat in front of these poor, starving people.  The pains of guilt set in on you.	在這些可憐挨餓的人面前吃東西，實在太不體貼了。一股愧疚感湧上心頭。
+OK.	好的。
+You're welcome!	不客氣！
+There is no reason to throw the dagger.	沒有理由丟出短刀。
+You don't want the dagger anymore.	你不再需要這把短刀了。
+You hurl the dagger at the old goat... he tries to avoid the flying dagger, but your aim is true... as the dagger strikes, he slumps to the ground... dead.	你把短刀朝老山羊擲去……牠試圖閃避飛來的短刀，但你瞄得很準……短刀擊中的瞬間，牠癱倒在地……死了。
+You don't have any way to kill the old goat.	你沒有辦法殺死這隻老山羊。
+You've already killed the goat.	你已經殺死那隻山羊了。
+The note reads, "Sometimes it is wise to think backwards."	紙條上寫著：「有時候，反過來想才是明智之舉。」
+The word on the bottom of the bowl says "fill".	碗底寫著一個字：「裝滿」。
+Even a small portion of the stew is very appetizing.	就算只有一小份燉肉，也令人食指大動。
+You have already opened the pouch.	你已經打開過皮袋了。
+You're going to be sorry!!  These were magic beans!	你會後悔的！！這些可是魔豆啊！
+You slip the beautiful ring on one of your fingers.	你把這只美麗的戒指戴上手指。
+I don't know why, but you drop the magic ring.	不知道為什麼，你把魔戒弄掉了。
+When the ring disappears, you reappear!	戒指消失的瞬間，你重新現形了！
+When you rub the magic ring, you mysteriously disappear, except for your footprints.	你摩擦魔戒的瞬間，神秘地消失了，只留下腳印。
+You rub the magic ring but the goat seems to have a strange effect on it.	你摩擦魔戒，但山羊似乎對它產生了奇怪的影響。
+With disappointment, you see that nothing happens.	你失望地發現，什麼事也沒發生。
+The spell to make you invisible has expired and you are once again visible to dangerous creatures, but, the ring has now disappeared.	隱身魔法已經失效，你再次現形，可能被危險的生物看見；魔戒也已經消失無蹤。
+You will have to find it before you can get it.	你得先找到它，才能拿到手。
+You do not have it.	你身上沒有它。
+_	_
+You are not wearing the ring.	你並沒有戴著戒指。
+There is no need to rub the ring as you are already invisible.	你已經是隱形狀態了，沒有必要再摩擦戒指。
+Info	資訊
+About KQ	關於 KQ
+Save Game      <F5>	儲存進度        <F5>
+Restore Game   <F7>	讀取進度        <F7>
+-------------------	-------------------
+Restart Game   <F9>	重新開始        <F9>
+Pause             <Esc>	暫停              <Esc>
+Quit        <Alt Z>	離開           <Alt Z>
+Game	遊戲
+Inventory     <Tab>	物品欄        <Tab>
+See Object     <F4>	檢視物品       <F4>
+Sound On/Off       <F2>	音效開關           <F2>
+Swim  =	游泳  =
+Special	特殊
+Graphics Mode  <Ctrl R>	顯示模式 <Ctrl R>
+Reset Joystick <Ctrl J>	重置搖桿 <Ctrl J>
+Fast  	快速  
+Slow  	慢速  
+King's Quest was designed by Roberta Williams.	《國王密令》由蘿貝塔·威廉斯（Roberta Williams）設計。
+Jump  0	跳躍  0
+Duck  -	蹲下  -
+Joystick/Mouse <Ctrl J>	搖桿／滑鼠 <Ctrl J>
+Misfortune strikes and you have fallen into the moat. Your struggles and cries have attracted hungry alligators.  They do not want to let you go.	厄運降臨，你掉進了護城河。你的掙扎和呼救聲引來了饑餓的鱷魚，牠們不打算放你走。
+King Edward's banners are waving in the strong breeze.	愛德華國王的旗幟在強風中飄揚。
+This is the castle of King Edward the Benevolent.	這裡是仁慈的愛德華國王的城堡。
+It looks deep and dangerous.  You can see alligators  floating in the water.	這裡看起來又深又危險，你能看見鱷魚在水中漂浮。
+The water in the moat is not conducive to swimming.	護城河裡的水不適合游泳。
+They are absolutely gorgeous!	它們美極了！
+It is a very small,  wooden barrel bridge.	這是一座非常小的木桶橋。
+The alligators are swimming in the moat.	鱷魚正在護城河裡游動。
+There are alligators in this water.  I don't think you want to try drinking it.	這片水裡有鱷魚，我想你應該不會想喝這裡的水。
+There is water nearby.	附近有水。
+King Edward does not allow anyone to take his flowers.	愛德華國王不准任何人摘他的花。
+The moats slippery sides prevent you from getting out.	護城河濕滑的河岸讓你爬不出去。
+You are standing outside a castle surrounded by an alligator filled moat.	你站在一座城堡外，城堡周圍環繞著滿是鱷魚的護城河。
+High above the castle, the flags are waving in the wind.	城堡高處，旗幟正在風中飄揚。
+You must enter the castle through the door, and the  door is closed.	你得從門進入城堡，但這扇門是關著的。
+You never know what might be in there!	你永遠不知道裡面會有什麼！
+It is a rather small, wooden bridge.	這是一座相當小的木橋。
+These alligators have protected the castle from many a trespasser.	這些鱷魚已經擋下了不少入侵者，保護了這座城堡。
+They pose as immovable guards for King Edward's castle, and have frightened off numerous intruders.	牠們就像愛德華國王城堡不動如山的守衛，已經嚇跑了無數入侵者。
+These doors are strongly built to keep out unwanted visitors.	這扇門建得十分堅固，用來擋住不速之客。
+You can't see them from here.	你在這裡看不到它們。
+As you kneel by the edge of the moat and see just how filthy the water is, your thirst strangely leaves you.	你跪在護城河邊，看清這水有多骯髒後，奇怪地不渴了。
+Although you notice the water is unclean, you fill the bucket.	雖然你注意到水並不乾淨，你還是把水桶裝滿了。
+You are not close enough to any water.	你離任何水源都不夠近。
+You have no container for water.	你沒有可以裝水的容器。
+You have been to the castle once and you may not return until your quest is complete.	你已經去過一次城堡，在完成任務之前不能再回去。
+You have been to the castle once since your quest and  are not allowed to return again.	自從展開任務後，你已經去過一次城堡，不准再回去了。
+Since the goat is with you, permission to enter the  castle is denied.	由於山羊跟著你，你不准進入城堡。
+The huge doors swing open slowly.	巨大的門緩緩敞開。
+Your knock echos within the castle.  Unfortunately, no one answers.	你的敲門聲在城堡裡迴盪，可惜沒有人應門。
+There are numerous white birch trees reaching to the sky.	許多白樺樹高聳入雲。
+After moving that rock once, even thinking about it should make you tired.	你已經搬過那塊石頭一次了，光是想到要再搬就讓你累。
+With a heave and a ho, you manage to move the rock... revealing a dark hole underneath it.	你使勁一推，總算把石頭搬開……底下露出一個黑漆漆的洞。
+This moving rock rolls downhill and you, unfortunately,  are in the way.	這塊石頭滾下山坡，而你不巧擋在它的去路上。
+It is a large rock with a hole next to it.	這是一塊大石頭，旁邊有個洞。
+There is a rock in the distance.	遠處有一塊石頭。
+You are too far from the hole to see in it.	你離那個洞太遠，看不清裡面。
+You are in a forest clearing.  There is a large rock here.	你身處一片林間空地，這裡有一塊大石頭。

@@ -1,0 +1,178 @@
+# 未命中但有相似句的參考草稿：原文 <TAB> 相似句譯文 <TAB> 相似句原文 <TAB> 相似度
+chest	 金盒子 	Chest	0.80
+carrot	 胡蘿蔔 	Carrot	0.83
+magic ring	 魔戒 	Magic Ring	0.80
+fourleaf clover	 幸運草 	Four-leaf Clover	0.84
+ceramic bowl	 陶碗 	Ceramic Bowl	0.83
+pebbles	 鵝卵石 	Pebbles	0.86
+leather slingshot	 皮製投石器 	Leather Slingshot	0.88
+pouch	 皮袋 	Pouch	0.80
+cheese	 乳酪 	Cheese	0.83
+magic mirror	 魔鏡 	Magic Mirror	0.83
+fiddle	 小提琴 	Fiddle	0.83
+walnut	胡桃	Walnut	0.83
+mushroom	 蘑菇 	Mushroom	0.88
+beans	 豆子 	Beans	0.80
+You're too busy right now to rub the ring.	你現在正忙著別的事，沒空爬樹。	You're too busy right now to climb a tree.	0.81
+You do not have a bowl.	你身上沒有胡蘿蔔。	You do not have a carrot.	0.83
+You need to be in water to swim.	你得先進到水裡才能游泳。	You need to be in the water to swim.	0.94
+You do not have any stew.	你身上沒有胡蘿蔔。	You do not have a carrot.	0.80
+There is no reason to throw the dagger.	這裡沒有人可以讓你丟短刀。	There is no one here to throw the dagger at.	0.84
+You've already killed the goat.	你已經把碗裝滿了。	You have already filled the bowl.	0.81
+You have already opened the pouch.	你已經打開過胡桃了。	You have already opened the walnut.	0.87
+The spell to make you invisible has expired and you are once again visible to dangerous creatures, but, the ring has now disappeared.	隱身魔法已經失效，你再次現形，可能被危險的生物看見；魔戒也已經消失無蹤。	The spell to make you invisible has expired and you are once again visible to dangerous creatures but, the ring has now disappeared.	1.00
+You do not have it.	你身上沒有 %s。	You do not have the %s.	0.86
+About KQ	 關於 KQI	About KQI	0.94
+Restore Game   <F7>	 讀取進度	Restore Game	0.83
+Restart Game   <F9>	 重新開始	Restart Game	0.83
+Fast  	 較快	Faster	0.80
+Slow  	 較慢	Slower	0.80
+Jump  0	 跳躍	Jump	0.80
+Duck  -	 蹲下	Duck	0.80
+You can't see them from here.	從這裡看不到什麼。	You can't see much from here.	0.90
+You are not close enough to any water.	你離水不夠近。	You are not close enough to the water.	0.92
+Your knock echos within the castle.  Unfortunately, no one answers.	你的敲門聲在城堡裡迴盪，可惜沒有人應門。	Your knock echoes within the castle. Unfortunately, no one answers.	0.99
+You are too far from the hole to see in it.	你離那個洞太遠，看不清裡面。	You are too far away from the hole to see into it.	0.92
+Inside the old, rotted stump you notice a small, canvas pouch.	你在腐朽的樹樁裡發現一個小皮袋。	Inside the rotting stump you notice a small leather pouch.	0.82
+From here you can see the stump is very old and nearly petrified.	從這裡你看得出這個樹樁又老又朽。	From here you can see the stump is very old and rotting away.	0.83
+You can vaguely see the stump in the distance.	隔著這段距離，你只能隱約看見那個樹樁。	You can only vaguely see the stump from this distance.	0.86
+You are not close enough to the lake.	你離水不夠近。	You are not close enough to the water.	0.93
+The bucket is soon filled with clear water.	這個老舊的木桶現在裝滿了清水。	This old wooden bucket is now filled with clear water.	0.82
+You do not have the carrot.	你身上沒有胡蘿蔔。	You do not have a carrot.	0.92
+The goat is following you.	山羊已經在跟著你了。	The goat is already following you.	0.87
+There is no gate right here.	這裡沒有山羊。	There is no goat here.	0.84
+There should be a gate around here somewhere.	這附近一定有一道閘門。	There must be a gate around here somewhere.	0.91
+You cannot reach the gate from here.	你在這裡搆不到那扇門。	You cannot reach the door from here.	0.89
+The gate is closed.	閘門已經是關著的了。	The gate is already closed.	0.83
+The gate is open.	閘門已經是開著的了。	The gate is already open.	0.81
+The old goat is already following you.	山羊已經在跟著你了。	The goat is already following you.	0.94
+You have nothing the old goat wants to eat.	你身上沒有大老鼠想要的東西。	You have nothing the rat wants.	0.81
+Goats love carrots!  The goat quickly devours yours.	山羊最愛胡蘿蔔了！老山羊很快就把你的胡蘿蔔吃光了。	Goats love carrots! The old goat quickly devours yours.	0.96
+The goat shows some interest in the carrot.	這隻老山羊對胡蘿蔔顯得有些興趣。	The old goat shows some interest in the carrot.	0.96
+There is no need to close the gate now.	現在沒有必要那麼做。	There is no need for that now.	0.81
+You are not close enough to even try.	你離水不夠近。	You are not close enough to the water.	0.85
+The old bucket holds a full load of water.	這個舊水桶大約能裝一加侖的水。	The old bucket holds about a gallon of water.	0.83
+The old bucket is already at the bottom of the well.	這個舊水桶已經在井口了。	The old bucket is already at the top of the well.	0.95
+The bucket is already at the top of the well.	這個舊水桶已經在井口了。	The old bucket is already at the top of the well.	0.96
+The rope descends into the darkness.	繩索消失在黑暗之中。	The rope disappears into the darkness.	0.84
+You can't raise the rope from here!	你沒辦法從這裡切斷繩索。	You can't cut the rope from here.	0.85
+You are not close enough to do that.	你離水不夠近。	You are not close enough to the water.	0.89
+The goat refuses to do down the well.	山羊不肯下到井裡去。	The goat refuses to go down the well.	0.97
+The goat refuses to enter the dark well.	山羊不肯下到井裡去。	The goat refuses to go down the well.	0.81
+The goat refuses to go down into the dark well.	山羊不肯下到井裡去。	The goat refuses to go down the well.	0.88
+The goat is afraid of heights and refuses to jump down the well.	那隻老山羊有懼高症，不肯爬樹。	The old goat is afraid of heights and refuses to climb the tree.	0.83
+Sorry, all the water is at the bottom of the well.	所有的水都在井底。	All the water is at the bottom of the well.	0.90
+Are you crazy?	什麼！你瘋了嗎？	What! Are you crazy?	0.82
+There's no wolf here.	這裡沒有小精靈。	There is no elf here.	0.86
+You can't climb a tree here!	你在這裡沒辦法爬樹！	You can't climb a tree from here!	0.92
+You do not have a carrot to eat.	你身上沒有胡蘿蔔。	You do not have a carrot.	0.88
+They are buried in the ground.  You must get closer to see them.	胡蘿蔔埋在地裡，你得靠近一點才能看清楚。	The carrots are buried in the ground. You must get closer to see them.	0.93
+You cannot do that from here.	你在這裡當然沒辦法這麼做。	You certainly cannot do that from here.	0.85
+This is a clear mountain lake with some steep cliffs surrounding it.	這是一座清澈的山中湖泊，周圍環繞著低矮多岩的湖岸。	This is a clear mountain lake with some low and rocky banks surrounding it.	0.83
+Wandering on the banks of the lake, you see a cute little elf.	你沿著這座美麗湖泊的岸邊漫步，看見一個可愛的小精靈。	Wandering along the banks of a beautiful lake, you see a cute little elf.	0.89
+There's no elf here.	這裡沒有小精靈。	There is no elf here.	0.93
+The door is already unlocked.	門已經關上了。	The door is already closed.	0.89
+Using the gold key, you unlock the huge door.	你用金鑰匙打開了這扇巨大的門……	Using the gold key, you unlock the huge door...	0.98
+The door is already locked.	門已經關上了。	The door is already closed.	0.93
+The door is already open.	門已經關上了。	The door is already closed.	0.88
+There's no witch here.	這裡沒有皮袋。	There's no pouch here.	0.86
+There is no bird.	這裡沒有鳥。	There is no bird here.	0.87
+It is a well known fact that goats hate trolls intensely. You should move aside and let the goat take care of this nasty troll.	眾所皆知，山羊對矮精靈恨之入骨。你讓到一旁，讓山羊去對付這隻可惡的矮精靈。	It is a well known fact that goats hate trolls intensely. You move aside and let the goat take care of this wretched, nasty troll.	0.93
+You push the troll as hard as you can but he doesn't budge an inch.	你使出全力推矮精靈，可惜矮精靈紋風不動。	You push the troll as hard as you can. Unfortunately, the troll doesn't budge an inch.	0.86
+There is no troll around here.	這裡沒有矮精靈。	There is no troll here.	0.87
+You are not close enough to the river.	你離水不夠近。	You are not close enough to the water.	0.92
+The windows are hard to break.	窗戶太硬了，打不破。	The windows are too hard to break.	0.94
+This is the sweetest little gingerbread house you ever saw.  The walls are cake, the roof is frosting, the chimney looks delicious, and the candy path and cookie fence are unbearably tempting!	這是你見過最甜美的小薑餅屋。牆壁是蛋糕做的，屋頂是糖霜，煙囪是用軟糖磚砌成的，糖果小徑和餅乾圍籬更是誘人得讓人受不了！	This is the sweetest little gingerbread house you've ever seen. The walls are cake, the roof is frosting, the chimney is made from gummy bricks, and the candy path and cookie fence are unbearably tempting!	0.83
+The path is around the corner.	門在轉角那邊。	The door is around the corner.	0.87
+There's no sorcerer here.	這裡沒有王杖。	There is no sceptre here.	0.84
+These are some of the finest walnuts you have ever seen.	這些是你見過最大、最飽滿的胡桃。	These are some of the largest, plumpest walnuts you have ever seen.	0.86
+You are not close enough to the Raging River.	你離水不夠近。	You are not close enough to the water.	0.87
+From here it looks like an ordinary delta of pebbles.	從這裡看，這只是一片普通的鵝卵石灘。	From here it looks like an ordinary beach of pebbles.	0.94
+There are many smooth pebbles next to the river.	湖邊有許多光滑的鵝卵石。	There are many smooth pebbles next to the lake.	0.93
+Being invisible has protected you from the dwarf.	隱形保護了你和你的寶物，沒讓矮人得逞。	Being invisible has protected you, and your treasures, from the dwarf.	0.82
+What a pretty bed of wild flowers.	好一片美麗的野花花圃。	What a pretty bed of wildflowers.	0.99
+It would be a shame to pick the lovely wild flowers.	摘下這些美麗的野花實在太可惜了。	It would be a shame to pick the lovely wildflowers.	0.99
+You throw the dagger and it lands in the stream, lost forever.	你把短刀丟出去，短刀落入河中，永遠消失了。	You throw the dagger and it lands in the river, lost for all time.	0.86
+You still haven't guessed my name!	矮人：「你還沒猜出我的名字呢！」	GNOME: "You still haven't guessed my name!"	0.88
+The gnome can't hear you from there.	你站在那裡，矮人聽不見你說話！	The gnome can't hear you from there!	0.97
+You should get a little closer.	你得再靠近一點。	You need to get a little closer.	0.83
+There are no beans here.	這裡沒有鳥。	There are no birds here.	0.88
+There is no gnome here.	這裡沒有繩索。	There is no rope here.	0.89
+Where did you get that idea?  That's not even close!	矮人：「你這想法是打哪來的？差得可遠了！」	GNOME: "Where did you get that idea? That's not even close!"	0.92
+The river runs swiftly between steep banks.	河水在陡峭的兩岸之間湍急流動。	The river flows swiftly between steep banks.	0.92
+You can't reach the river from here.	你在這裡搆不到那扇門。	You cannot reach the door from here.	0.86
+When you look in the doorway, you see a poor, starving woodcutter and his wife.	你朝門口望去，看見一位可憐挨餓的樵夫和他的妻子。	When you look in the doorway, you see a poor starving woodcutter and his wife.	0.99
+How are you going to use the ax when you can't even get it out of this stump?	你連斧頭都拔不出樹樁，要怎麼用它？	How are you going to use the axe when you can't even get it out of the stump?	0.97
+The trees were cut from these stumps long ago.	多年前，這些樹木就是從這些樹樁上砍下的。	The trees were cut from these stumps years ago.	0.90
+When you look in the window, you see a poor, starving woodcutter and his wife.	你從窗戶望進去，看見一個貧窮挨餓的樵夫和他的妻子。	When you look in the window, you see a poor starving woodcutter and his wife.	0.99
+There is no ogre here.	這裡沒有繩索。	There is no rope here.	0.91
+You see the familiar side of the Raging River.	你看見這條洶湧河流你熟悉的這一岸。	You see the familiar side of the raging river.	0.96
+You need to get closer to do that.	你得靠近一點才能這麼做。	You need to be closer to do that.	0.96
+This lovely meadow is split by the Raging River.	這片美麗的草原被一條奔騰洶湧的河流一分為二。	This lovely meadow is split by a wild, raging river.	0.86
+There is no mushroom here.	這裡沒有繩索。	There is no rope here.	0.83
+OUCH	哎呦！	OUCH!	0.89
+You have nothing to cut the rope with.	你沒有辦法割斷繩索。	You have no way to cut the rope.	0.80
+You need to be closer to the water to drink.	你得再靠近水邊一點。	You need to get closer to the water.	0.85
+In this large cavern, there is a slimy dead dragon, an opening on one side, and a large boulder in the other.	在這個寬闊的地底洞穴裡，有一條渾身黏液的綠色巨龍已死，一側有個洞口，還有一塊碩大的巨石。	In this large underground cavern, there is one slimy green dead dragon, an opening on one side, and a very large boulder.	0.83
+There is no dragon here.	這裡沒有短刀。	There is no dagger here.	0.88
+This dragon had only one life and you have taken it.	這隻巨龍只有一條命，而你已經取走了。	This dragon had only one life, and you have already taken it.	0.92
+There is no mirror here.	這裡沒有繩索。	There is no rope here.	0.87
+You could get a much better view if you were closer.	你要是再靠近一點，視野會清楚許多。	You could get a much better view if you were a little bit closer.	0.89
+You are not close enough to reach it.	你離鳥巢不夠近。	You're not close enough to the nest.	0.82
+You don't have any water.	你身上沒有短刀。	You don't have a dagger.	0.86
+You can't do that from here.!	你在水底下沒辦法這麼做！	You can't do that from under water!	0.84
+It looks like this bottle has been here for a very long time.	這只箱子看起來已經埋在這裡很長一段時間了。	It looks like this chest has been buried here for a very long time.	0.88
+You are not close enough to see him clearly.	你離得不夠近，看不進井裡。	You are not close enough to see into the well.	0.82
+The magic chest appears to have been fashioned from ebony and rimmed on the edges with gold.	巨人附近的地上，擺著一只金盒子，看起來是用烏木打造，邊緣鑲著金邊。	On the ground near the giant is a magic chest that appears to have been fashioned from ebony and rimmed on the edges with gold.	0.83
+You are in the Land of the Clouds.  It is rumored that a giant lives here.	你身處雲之國，傳說有個巨人住在這上面。	You are in the Land of the Clouds. It is rumored that a giant lives up here.	0.98
+It is empty.	它是空的。	It's empty.	0.87
+This sling is made of very stretchy leather.	這把投石器是用非常有彈性的皮革做的。	This slingshot is made of very stretchy leather.	0.96
+You reach into the hole and pull out the leather sling.	你把手伸進洞裡，拉出那把皮革投石器。	You reach into the hole and pull out the leather slingshot.	0.96
+You can't see into the hole from here.	從這裡看不到洞裡面。	You can't see inside the hole from here.	0.92
+You need to be closer to try.	你得靠近一點才能這麼做。	You need to be closer to do that.	0.87
+There is a pure golden egg lying in the nest!	鳥巢裡躺著一顆完美無瑕、閃閃發光的金蛋。	There is a perfect, shimmering golden egg lying in the nest.	0.82
+The nest is empty.	洞裡是空的。	The hole is empty.	0.83
+You can't get the egg from here!	你沒辦法從這裡切斷繩索。	You can't cut the rope from here.	0.83
+The witch mutters, "I am going to get my oven ready to cook someone for dinner (yum)."	巫婆喃喃道：「我要去把大鍋準備好，煮個人來當晚餐（嗯，真香）。」	The witch mutters, "I am going to get my cauldron ready to cook someone for dinner (yum)."	0.95
+The witch mumbles, "After I get the oven nice and hot, I will be ready to have someone for dinner (giggle)."	巫婆嘀咕著：「等我把大鍋燒得夠熱，就能請人來吃晚餐了（咯咯）。」	The witch mumbles, "After I get the cauldron nice and hot, I will be ready to have someone for dinner (giggle)."	0.96
+The witch mutters, "The oven is heating up nicely.  I wonder who will be my dinner guest!"	巫婆喃喃道：「大鍋燒得正好，不知道誰會是我的晚餐貴客呢！」	The witch mutters, "The cauldron is heating up nicely. I wonder who will be my dinner guest!"	0.96
+The witch says, "My oven is now the perfect temperature. It is time to invite someone for dinner (cackle, cackle)!"	巫婆說：「我的大鍋現在溫度剛剛好，是時候邀請誰來吃晚餐了（咯咯笑）！」	The witch says, "My cauldron is now the perfect temperature. It is time to invite someone for dinner (cackle, cackle)!"	0.97
+Rats!  She has cast some spell to keep you from escaping!. The witch remarks, "Oh, how nice of you to come for dinner (cackle, cackle)"	糟了！她施了某種魔法讓你逃不掉！巫婆說道：「喔，你能來吃晚餐真是太好了（咯咯笑）！」	Rats! She has cast some spell to keep you from escaping! The witch remarks, "Oh, how nice of you to come for dinner (cackle, cackle)!"	0.99
+There is no witch here.	這裡沒有洞。	There is no hole here.	0.84
+I don't see any here.	這裡沒有看到魚。	You don't see any fish here.	0.82
+You cannot see it from here.	從這裡看不到什麼。	You can't see much from here.	0.84
+You may have seen one in the other room, but I am not sure.	你或許在另一個房間看過一張床，但我不太確定。	You may have seen a bed in the other room, but I am not sure.	0.95
+You are not close enough to touch it.	你離水不夠近。	You are not close enough to the water.	0.88
+There is a note lying on top of it.	上面看起來放著一張紙條。	It looks like there is a note lying on top of it.	0.81
+The bed is not here.	這裡沒有水桶。	The bucket is not here.	0.88
+You cannot reach it from here.	你在這裡搆不到那扇門。	You cannot reach the door from here.	0.88
+You don't have the note.	你身上沒有短刀。	You don't have the dagger.	0.84
+You are in the Land of the Clouds.  It is rumored a giant lives up here.	你身處雲之國，傳說有個巨人住在這上面。	You are in the Land of the Clouds. It is rumored that a giant lives up here.	0.97
+The further you get from the light, the darker and mustier it becomes.	你離光源越遠，霉味就越重。	The farther you get from the light, the mustier it becomes.	0.90
+There is no rat here.	這裡沒有山羊。	There is no goat here.	0.93
+The door is closed.	門已經關上了。	The door is already closed.	0.83
+You do not have any.	你身上沒有胡蘿蔔。	You do not have a carrot.	0.80
+The rat drools at the sight of the cheese... and snatches it from your hand.  You might want to count your fingers.	大老鼠一看到乳酪就流口水，一把從你手中搶走。你也許該數數自己的手指還在不在。	The rat drools at the sight of the cheese, and snatches it from your hand. You might want to count your fingers.	0.98
+The leprechauns' magic powers detect your unseen presence.	地穴人的魔法察覺到你隱形的存在。	The leprechauns' magical powers detect your unseen presence.	0.98
+There are not any leprechauns here.	這裡沒有地穴人。	There are no leprechauns here.	0.92
+There aren't any leprechauns here.	這裡沒有地穴人。	There are no leprechauns here.	0.88
+The King of the leprechauns is sitting on the stone throne.	地穴人國王坐在他的王座上。	The King of the Leprechauns is sitting on his throne.	0.91
+It is made of titanium and is rimmed with jewels.	靈盾以鈦金屬打造，邊緣鑲著珠寶。	The shield is made of titanium and is rimmed with jewels.	0.89
+You need to get closer to see it clearly.	你得再靠近水邊一點。	You need to get closer to the water.	0.83
+You must be closer to do that.	你得靠近一點才能這麼做。	You need to be closer to do that.	0.86
+This is the throne room of the leprechaun King.	這裡是地穴人國王的王座廳。	This is the throne room of the Leprechaun King.	0.98
+The stairs are very steep and narrow.	這條小徑又陡又窄。	The path is very steep and narrow.	0.79
+This is a small cave with stairs on one side and a very small hole on the other side.	這是一個小洞穴，一側有小徑，另一側有個非常小的洞。	This is a small cave with a path on one side and a very small hole on the other side.	0.94
+This is the woodcutter's fiddle.	這是樵夫的那把舊小提琴。	This is the woodcutter's old fiddle.	0.94
+You need to be in the water in order to swim.	你得先進到水裡才能游泳。	You must be in the water in order to swim.	0.90
+You are already swimming!	你已經在游泳了。	You are already swimming.	0.96
+You see nothing special.	格拉漢爵士，你沒看見什麼特別的東西。	You see nothing special, Sir Graham.	0.80
+There is no "%w2" here.	這裡沒有矮人。	There is no dwarf here.	0.83
+I don't understand "%w1".	我聽不懂「%s」。	I don't understand "%s".	0.94
+I don't understand "%w2".	我聽不懂「%s」。	I don't understand "%s".	0.94
+I don't understand "%w3".	我聽不懂「%s」。	I don't understand "%s".	0.94
+What would you like to climb?	你想裝滿什麼？	What would you like to fill?	0.88
+There is no "%w2" here to look at.	這裡沒有魚可以看！	There is no fish here to look at!	0.84
+You do not have any water.	你身上沒有胡蘿蔔。	You do not have a carrot.	0.82
+There is no door here.	這裡沒有矮人。	There is no dwarf here.	0.89
+The goat does not mind getting its feet wet,but will not swim in the water.  You should go back and lead the goat around the water.	山羊不介意弄濕腳，但牠不會游泳。你該回頭，帶著山羊繞過那片水域。	The goat does not mind getting its feet wet, but will not swim in the water. You should go back and lead the goat around the water.	1.00

@@ -1,0 +1,36 @@
+# 遊戲資源絕不入庫（交付只放 patch）
+game/
+extract/
+out/
+
+# 含遊戲的完整包只留本機
+dist-all/
+dist/
+build/
+
+# MT-32 ROM 有版權
+*.ROM
+*.rom
+
+# ScummVM 原始樹（用 patches/ 重建，見 BUILD.md）
+scummvm-src/
+
+# 倚天字型原始資料（授權未明，只在本機烘字用）
+tools/assets/eten/
+
+# 暫存
+__pycache__/
+*.pyc
+.scratch/
+
+# 手冊掃描原件是第三波的印刷品，只放文字整理版
+manual_cht/*.jpg
+manual_cht/**/*.jpg
+manual_cht/**/*.txt
+
+# 第三方工具二進位（打包時自動下載）
+tools/.cache/
+
+# 抽字中間產物（可用 tools/extract_*.py 從自己的遊戲重生；純英文原文 dump 不入庫）
+translation/skeleton_*.tsv
+translation/agi_prefilled.tsv

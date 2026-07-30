@@ -1,0 +1,129 @@
+   Chris Iden   	   Chris Iden   
+Graphics by:    	美術設計：    
+ Doug MacNeill  	 Doug MacNeill  
+  Greg Rowland  	  Greg Rowland  
+New Version by: 	新版製作： 
+ Jeff Stephenson	 Jeff Stephenson
+  Sol Ackerman  	  Sol Ackerman  
+Thanks to:      	特別感謝：      
+ Linda Ackerman  	 Linda Ackerman  
+  Mark Crowe     	  Mark Crowe     
+   Robert Heitman	   Robert Heitman
+    Scott Murphy 	    Scott Murphy 
+(c) copyright SIERRA On-Line Inc.  1987	(c) 版權所有 SIERRA On-Line Inc.  1987
+              KING'S QUEST	              國王密令
+    F1 displays this message.	    F1 顯示這則說明。
+    F2 turns the sound off and on.	    F2 切換音效開關。
+    F3 retypes the last line typed.	    F3 重新輸入上一行文字。
+    F5 saves your current game.	    F5 儲存目前的進度。
+    F7 restores a saved game.	    F7 讀取已儲存的進度。
+    F9 restarts the game.	    F9 重新開始遊戲。
+   TAB shows the status screen.	   TAB 顯示狀態畫面。
+   ESC activates the menus.	   ESC 開啟選單。
+     0 for jumping	     0 跳躍
+     - for ducking	     - 蹲下
+     = for swimming	     = 游泳
+Ctrl-J sets up your joystick.	Ctrl-J 設定搖桿。
+Ctrl-R toggles graphics mode.	Ctrl-R 切換繪圖模式。
+    F1 or HELP displays this message.	    F1 或 HELP 鍵顯示這則說明。
+   ESC activates the menus. (see below)	   ESC 開啟選單。（詳見下方）
+     = for swimming (see below)	     = 游泳（詳見下方）
+Ctrl-J toggles joystick/mouse.	Ctrl-J 切換搖桿／滑鼠。
+Clicking the joystick button or the\n right mouse button also activates\n the menus.	按下搖桿按鈕\n 或滑鼠右鍵，\n 也能開啟選單。
+Double-clicking the joystick button\n or the right mouse button also\n initiates swimming.	連按兩下搖桿按鈕\n 或滑鼠右鍵，\n 也能開始游泳。
+discard.view(%v18):%m30	discard.view(%v18):%m30
+set.view(%v18,_):%m26	set.view(%v18,_):%m26
+set.view(_,%v18):%m30	set.view(_,%v18):%m30
+set.loop(%v18,_):%m26	set.loop(%v18,_):%m26
+set.loop(%v18,_):\nBad loop #.%m25	set.loop(%v18,_):\n迴圈編號錯誤。%m25
+set.loop(%v18,_):%m31	set.loop(%v18,_):%m31
+set.cel(%v18,_):%m26	set.cel(%v18,_):%m26
+set.cel(%v18,_):\nBad cel #.%m25	set.cel(%v18,_):\ncel 編號錯誤。%m25
+sound(%v18):\nSound not loaded.%m25	sound(%v18):\n音效尚未載入。%m25
+set.cel(%v18,_):%m31	set.cel(%v18,_):%m31
+Script buffer overflow.\nMaximum size = %v18%m25	指令緩衝區溢位。\n最大容量 = %v18%m25
+erase(%v18):%m26	erase(%v18):%m26
+animate.obj(%v18):%m26	animate.obj(%v18):%m26
+print(%v18): no message%m25	print(%v18)：無訊息%m25
+Bad test: %v18%m25	測試條件錯誤：%v18%m25
+Bad action: %v18%m25	動作錯誤：%v18%m25
+start.update(%v18):%m28	start.update(%v18):%m28
+draw.pic(%v18):%m32	draw.pic(%v18):%m32
+draw(%v18):%m26	draw(%v18):%m26
+draw(%v18):%m31	draw(%v18):%m31
+discard.pic(%v18):%m32	discard.pic(%v18):%m32
+set.scan.start() already active\nin logic %v18.%m25	set.scan.start() 已在\nlogic %v18 中啟用。%m25
+get(%v18) or put(%v18):%m26	get(%v18) or put(%v18):%m26
+\nPress ESC to quit.	\n按 ESC 鍵離開。
+%m27.%m25	%m27.%m25
+\nBad object number	\n物件編號錯誤
+%m27 or object not drawn.%m25	%m27 或物件尚未繪製。%m25
+\nView not 	\n視圖尚未 
+%m29loaded.%m25	%m29載入。%m25
+%m29set.%m25	%m29設定。%m25
+Picture not loaded.%m25	圖片尚未載入。%m25
+new room: 	新房間： 
+x: 	x： 
+y: 	y： 
+object number: 	物件編號： 
+var number: 	變數編號： 
+var value: 	變數數值： 
+object #: 	物件 #： 
+var %v73: %v72	變數 %v73：%v72
+flag number: 	旗標編號： 
+flag %v73 is set	旗標 %v73 已設定
+flag %v73 is not set	旗標 %v73 尚未設定
+Word not known: 	無法辨識的單字： 
+%m12%w1	%m12%w1
+%m12%w2	%m12%w2
+%m12%w3	%m12%w3
+No response to input.	沒有任何回應。
+We, at Sierra, wish to thank you for playing King's Quest. We are very sorry that you did not succeed and hope you will fare better next time. Good luck.	我們 Sierra 全體同仁感謝你遊玩《國王密令》。很遺憾你這次沒能成功，希望你下次能有更好的表現。祝你好運。
+As you can no longer continue, I can only permit you to: Restore Game,  Restart Game or Take Inventory. Sorry.	由於你已無法繼續遊戲，目前只能執行：讀取進度、重新開始或查看物品欄。抱歉。
+We, at Sierra, wish to thank you for playing King's Quest. We are pleased to see that you are doing so well and hope that your score will keep improving.	我們 Sierra 全體同仁感謝你遊玩《國王密令》。很高興看見你表現得如此出色，希望你的分數能持續進步。
+We, at Sierra, wish to thank you for playing King's Quest. We are delighted by your score and hope you are enjoying the game.	我們 Sierra 全體同仁感謝你遊玩《國王密令》。你的分數令人欣喜，希望你樂在其中。
+As you will never get out of this cage alive, I can only permit you to: Restore Game, Restart Game or Take Inventory. Sorry.	由於你不可能活著離開這座牢籠，目前只能執行：讀取進度、重新開始或查看物品欄。抱歉。
+Unfortunately, with the moat population swimming is not possible.	很遺憾，護城河裡棲息著大量生物，沒辦法在此游泳。
+You need to be in the water in order to swim.	你得先進到水裡才能游泳。
+You are already swimming!	你已經在游泳了！
+The swift current does not allow for swimming.	湍急的水流讓你沒辦法游泳。
+It appears you have become normal size again.	看來你已經恢復成正常大小了。
+You see nothing special.	你沒看見什麼特別的東西。
+You cannot get the "%w2". At least not now!	你現在還拿不到「%w2」，至少現在不行！
+There is no reason to do that.	沒有理由這麼做。
+The "%w2" doesn't appeal just now.	「%w2」現在引不起你的興趣。
+No. That would just waste time.	不行，那只會浪費時間。
+You can try to go there.	你可以試著往那裡走。
+That would be inappropriate at this time.	現在這麼做並不恰當。
+Hello."	你好。」
+OK. "%w2"	OK。「%w2」
+You will have to find him yourself.	你得自己去找到他。
+You will have to find her yourself.	你得自己去找到她。
+You will have to find it yourself.	你得自己去找到它。
+There is no "%w2" here.	這裡沒有「%w2」。
+What do you wish to do with it???	你想拿它做什麼？？？
+You can't eat the mushroom if you don't have it!	你身上沒有蘑菇，怎麼吃得到！
+You can't do that--at least not now!	你沒辦法這麼做──至少現在不行！
+Not right now!	現在不行！
+There is nobody here but you!	這裡除了你沒有別人！
+Just say what you wish to get.	直接說出你想拿的東西。
+You get no response from the "%w2".	「%w2」沒有任何回應。
+I don't understand "%w1".	我聽不懂「%w1」。
+I don't understand "%w2".	我聽不懂「%w2」。
+I don't understand "%w3".	我聽不懂「%w3」。
+Fill what?	要裝滿什麼？
+You have better things to do than to play all day.	你該做點正事，別成天只顧著玩。
+What would you like to climb?	你想爬什麼？
+Well.  Go look for it.	好吧，去找找看吧。
+This is a very beautiful tree.	這是一棵非常美麗的樹。
+This is just a normal tree, but very pretty.	這只是一棵普通的樹，但很漂亮。
+You admire the beauty of the tree.	你欣賞著這棵樹的美。
+This is a very nice looking rock.	這是一顆看起來很不錯的石頭。
+There is nothing extraordinary about this rock.	這顆石頭沒什麼特別之處。
+This is your ordinary rock.	這只是顆普通的石頭。
+There is no "%w2" here to look at.	這裡沒有「%w2」可以看。
+You do not have any water.	你身上沒有水。
+There is no door here.	這裡沒有門。
+The goat does not mind getting its feet wet,but will not swim in the water.  You should go back and lead the goat around the water.	山羊不介意弄濕腳，但牠不會游泳。你該回頭，帶著山羊繞過那片水域。
+The goat, not being able to see you, wanders off.	山羊看不見你，於是四處遊蕩離去。
+It is a mighty beanstalk that stretches to the sky.	這是一株雄偉的豆莖，直聳雲霄。

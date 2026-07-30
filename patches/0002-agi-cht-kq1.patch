@@ -1,0 +1,690 @@
+diff --git a/engines/agi/agi.cpp b/engines/agi/agi.cpp
+index 95d4ad40..4452f9f1 100644
+--- a/engines/agi/agi.cpp
++++ b/engines/agi/agi.cpp
+@@ -521,6 +521,11 @@ void AgiEngine::initialize() {
+ 	_words = new Words(this);
+ 	_font = new GfxFont(this);
+ 	_gfx = new GfxMgr(this, _font);
++	// 繁體中文化：須在 SystemUI 建構前（其建構子依 _chtEnabled 決定系統 UI 是否用中文），
++	// 也在 initVideo 前（initVideo 依 _chtEnabled 決定拉 640x400 hi-res）。
++	// 只載 kq1_big5.fnt/translation.tsv，不依賴 _font->init()。
++	_gfx->loadChtResources();
++	chtLoadVerifiedState();   // 繁體中文化：判定是否已通過年齡驗證(有存檔/flag)→ 之後自動略過
+ 	_sound = new SoundMgr(this, _mixer);
+ 	_picture = new PictureMgr(this, _gfx);
+ 	_sprites = new SpritesMgr(this, _gfx);
+diff --git a/engines/agi/agi.h b/engines/agi/agi.h
+index b3ced461..9e018279 100644
+--- a/engines/agi/agi.h
++++ b/engines/agi/agi.h
+@@ -747,6 +747,14 @@ public:
+ 	SpritesMgr *_sprites;
+ 	TextMgr *_text;
+ 	InventoryMgr *_inventory;
++
++	// 繁體中文化：年齡+問答驗證「一次通過就記住」。驗證在 room 6 進行(年齡走 get.num、
++	// 問答是單鍵 a-d 由 controller 捕捉，v96=題號、v93=正解 1-4)。已驗證時引擎自動填年齡 99、
++	// 自動送正解鍵，玩家不用再答；標題/警告片頭照常顯示。
++	bool  _chtVerified = false;    // 啟動判定：flag 檔存在 或 已有存檔
++	int16 _chtLastQuizQ = -1;      // 已自動答過的最後題號(v96)，避免同題重覆送鍵
++	void  chtLoadVerifiedState();  // 啟動時判定 _chtVerified
++	void  chtMarkVerified();       // 通過驗證時寫 flag 檔
+ 	PictureMgr *_picture;
+ 	AgiLoader *_loader;
+ 	GfxMenu *_menu;
+diff --git a/engines/agi/cycle.cpp b/engines/agi/cycle.cpp
+index 81421b47..930db287 100644
+--- a/engines/agi/cycle.cpp
++++ b/engines/agi/cycle.cpp
+@@ -20,6 +20,7 @@
+  */
+ 
+ #include "common/config-manager.h"
++#include "common/savefile.h"
+ 
+ #include "agi/agi.h"
+ #include "agi/sprite.h"
+@@ -53,6 +54,11 @@ void AgiEngine::newRoom(int16 newRoomNr) {
+ 		newRoomNr = ConfMan.getBool("copy_protection") ? 125 : 73;
+ 	}
+ 
++	// 繁體中文化：離開驗證室(room 6)進入遊戲 = 通過年齡+問答驗證 → 寫 flag，下次開機自動略過
++	if (_gfx->chtEnabled() && !_chtVerified && getVar(VM_VAR_CURRENT_ROOM) == 6 && newRoomNr != 6 && newRoomNr != 0) {
++		chtMarkVerified();
++	}
++
+ 	ScreenObjEntry *screenObjEgo = &_game.screenObjTable[SCREENOBJECTS_EGO_ENTRY];
+ 
+ 	// Loading trigger
+@@ -157,6 +163,18 @@ void AgiEngine::resetControllers() {
+ void AgiEngine::interpretCycle() {
+ 	ScreenObjEntry *screenObjEgo = &_game.screenObjTable[SCREENOBJECTS_EGO_ENTRY];
+ 
++	// 繁體中文化：Ctrl+Alt+X 一鍵略過驗證 → 直接換到遊戲開場（room 11，賴瑞在老左酒吧外），
++	// 繞過年齡+問答。在 runLogic 前於安全點換場；並寫 flag，之後開機自動略過。不逐題模擬作答。
++	// 繁體中文化：已驗證則自動答年齡問答。room 6=驗證室；v96=題號、v93=正解(1-4→a/b/c/d)。
++	// 在 runLogic 前把正解鍵塞進佇列，controller 於本 cycle 就能捕捉；用 v96 去重避免重覆送。
++	if (_chtVerified && getVar(VM_VAR_CURRENT_ROOM) == 6) {
++		int16 quizQ = getVar(96), quizAns = getVar(93);
++		if (quizQ != 0 && quizQ != _chtLastQuizQ && quizAns >= 1 && quizAns <= 4) {
++			keyEnqueue("abcd"[quizAns - 1]);
++			_chtLastQuizQ = quizQ;
++		}
++	}
++
+ 	if (!_game.playerControl)
+ 		setVar(VM_VAR_EGO_DIRECTION, screenObjEgo->direction);
+ 	else
+@@ -210,6 +228,35 @@ void AgiEngine::interpretCycle() {
+ 	//_gfx->doUpdate();
+ }
+ 
++// 繁體中文化：啟動時判定是否「已通過驗證」。條件(任一)：① 已有本遊戲存檔(驗證在開場、
++// 存檔前，有存檔必然通過過)；② 存在專用 flag 檔 <target>.chtok(首次通過時寫)。
++void AgiEngine::chtLoadVerifiedState() {
++	if (!_gfx->chtEnabled())
++		return;
++	if (!_saveFileMan->listSavefiles(_targetName + ".###").empty()) {
++		_chtVerified = true;
++		return;
++	}
++	Common::InSaveFile *in = _saveFileMan->openForLoading(_targetName + ".chtok");
++	if (in) {
++		_chtVerified = true;
++		delete in;
++	}
++}
++
++// 繁體中文化：首次通過驗證時寫 flag 檔，讓「還沒存過遊戲」也能記住、下次自動略過。
++void AgiEngine::chtMarkVerified() {
++	if (_chtVerified)
++		return;
++	_chtVerified = true;
++	Common::OutSaveFile *out = _saveFileMan->openForSaving(_targetName + ".chtok", false);
++	if (out) {
++		out->writeByte(1);
++		out->finalize();
++		delete out;
++	}
++}
++
+ // We return the current key, or 0 if no key was pressed
+ uint16 AgiEngine::processAGIEvents() {
+ 	ScreenObjEntry *screenObjEgo = &_game.screenObjTable[SCREENOBJECTS_EGO_ENTRY];
+diff --git a/engines/agi/graphics.cpp b/engines/agi/graphics.cpp
+index 1bb1d202..5938092b 100644
+--- a/engines/agi/graphics.cpp
++++ b/engines/agi/graphics.cpp
+@@ -26,6 +26,7 @@
+ 
+ #include "graphics/cursorman.h"
+ #include "graphics/paletteman.h"
++#include "graphics/big5.h"
+ 
+ #include "agi/agi.h"
+ #include "agi/graphics.h"
+@@ -39,6 +40,13 @@ namespace Agi {
+ #include "agi/font.h"
+ 
+ GfxMgr::GfxMgr(AgiBase *vm, GfxFont *font) : _vm(vm), _font(font) {
++	_chtEnabled = false;
++	_chtLangOn = true;   // 預設顯示中譯；F8 可切成英文原文
++	_chtFont = nullptr;
++	_chtTitleOverlay = nullptr;
++	_chtTitleOX = _chtTitleOY = _chtTitleOW = _chtTitleOH = 0;
++	_chtTitlePic = -1;
++
+ 	memset(&_paletteGfxMode, 0, sizeof(_paletteGfxMode));
+ 	memset(&_paletteTextMode, 0, sizeof(_paletteTextMode));
+ 
+@@ -151,6 +159,11 @@ void GfxMgr::initVideo() {
+ 		break;
+ 	}
+ 
++	// 繁體中文化：拉高到 640x400 hi-res 內部畫布（ScummVM 顯示層 aspect 校正為 640x480），
++	// 讓 16x16 中文字有空間（rulebook 81 拉高畫布不縮字，D-1）。
++	if (_chtEnabled)
++		forceHires = true;
++
+ 	if (_font->isFontHires() || forceHires) {
+ 		// Upscaling enable
+ 		_upscaledHires = DISPLAY_UPSCALED_640x400;
+@@ -1157,6 +1170,146 @@ void GfxMgr::drawDisplayRectCGA(int16 x, int16 y, int16 width, int16 height, byt
+ /**
+  * Draw a character to the display screen using text row and column coordinates
+  */
++// 繁體中文化：把 \n / \\ escape 還原成實際位元組（AGI 訊息含硬換行，塞不進單行 TSV）
++static Common::String chtUnescape(const Common::String &in) {
++	Common::String out;
++	for (uint i = 0; i < in.size(); i++) {
++		if (in[i] == '\\' && i + 1 < in.size()) {
++			char n = in[i + 1];
++			if (n == 'n') { out += '\n'; i++; continue; }
++			if (n == '\\') { out += '\\'; i++; continue; }
++			if (n == 't') { out += '\t'; i++; continue; }
++		}
++		out += in[i];
++	}
++	return out;
++}
++
++// 繁體中文化：載入 Big5 字型與 translation.tsv。須在 initVideo() 之前呼叫（initVideo 依 _chtEnabled 決定拉 hi-res）。
++void GfxMgr::loadChtResources() {
++	// 繁體中文化以「遊戲目錄有無 kq1_big5.fnt」為開關，不依賴 --language。
++	// 原因：LSL1 AGI 在 ScummVM 走 fallback 偵測，一旦把 target 語言設成非英文就無法啟動遊戲
++	//（任何非英文語言皆然，與中文無關）。改用字型檔存在與否，遊戲以英文正常啟動，中文照樣生效。
++	Common::File fontFile;
++	if (!fontFile.open("kq1_big5.fnt")) {
++		_chtEnabled = false;
++		return; // 沒有中文字型 → 維持英文
++	}
++	_chtEnabled = true;
++	_chtFont = new Graphics::Big5Font();
++	// 15 列/字，必須與 tools/build_cht.py --size 產出的 kq1_big5.fnt 相同（SCI 端的
++	// GfxFontChinese 同樣用 15）。loadPrefixedRaw 按 2 + height*2 bytes 逐筆讀，高度一旦
++	// 對不上就逐筆錯位，只有偶然對齊的字查得到 glyph，其餘畫成空白。
++	_chtFont->loadPrefixedRaw(fontFile, 15);
++	fontFile.close();
++	debug("AGI-CHT: Big5 字型 kq1_big5.fnt 已載入");
++
++	// translation.tsv：<english>\t<big5>，逐行載入成 HashMap
++	Common::File tsvFile;
++	if (tsvFile.open("translation.tsv")) {
++		while (!tsvFile.eos()) {
++			Common::String line = tsvFile.readLine();
++			if (line.empty())
++				continue;
++			uint32 tab = line.findFirstOf('\t');
++			if (tab == Common::String::npos)
++				continue;
++			Common::String key = chtUnescape(line.substr(0, tab));
++			Common::String val = chtUnescape(line.substr(tab + 1));
++			_chtTranslation[key] = val;
++		}
++		tsvFile.close();
++		debug("AGI-CHT: 載入 %d 則翻譯", (int)_chtTranslation.size());
++	} else {
++		warning("AGI-CHT: 找不到 translation.tsv");
++	}
++
++	loadChtTitleOverlay();
++}
++
++// 載入標題疊圖 kq1_title_agi.ovl（格式見 tools/build_title_overlay.py）。缺檔則靜默略過。
++void GfxMgr::loadChtTitleOverlay() {
++	Common::File f;
++	if (!f.open("kq1_title_agi.ovl"))
++		return;
++	byte magic[4];
++	f.read(magic, 4);
++	if (memcmp(magic, "CHTO", 4) != 0) {
++		warning("AGI-CHT: kq1_title_agi.ovl magic 不符，略過");
++		return;
++	}
++	f.readByte();                 // version
++	f.readByte();                 // palType（EGA=0；AGI 端只用 EGA 索引）
++	_chtTitleOX = f.readUint16BE();
++	_chtTitleOY = f.readUint16BE();
++	_chtTitleOW = f.readUint16BE();
++	_chtTitleOH = f.readUint16BE();
++	uint32 n = (uint32)_chtTitleOW * _chtTitleOH;
++	_chtTitleOverlay = (byte *)malloc(n);
++	if (!_chtTitleOverlay) { _chtTitleOW = _chtTitleOH = 0; return; }
++	f.read(_chtTitleOverlay, n);
++	f.close();
++	debug("AGI-CHT: 標題疊圖已載入 (%dx%d @ %d,%d)", _chtTitleOW, _chtTitleOH, _chtTitleOX, _chtTitleOY);
++}
++
++// 若 picNr 是標題 pic（首張顯示的 pic），把「幻想空間」中文標題疊到 display 上。
++// 只在 hi-res(640x400) 顯示模式生效；索引 0xFF 為透明。
++void GfxMgr::drawChtTitleOverlay(int16 picNr) {
++	if (!_chtEnabled || !_chtTitleOverlay)
++		return;
++	if (_chtTitlePic == -1)
++		_chtTitlePic = picNr;     // 首張 pic 視為標題
++	if (picNr != _chtTitlePic)
++		return;
++	if (_displayScreenWidth < (int)(_chtTitleOX + _chtTitleOW) ||
++	    _displayScreenHeight < (int)(_chtTitleOY + _chtTitleOH))
++		return;                   // 非 hi-res / 尺寸不符時不疊，避免越界
++	for (uint16 ry = 0; ry < _chtTitleOH; ry++) {
++		byte *src = _chtTitleOverlay + ry * _chtTitleOW;
++		byte *dst = _displayScreen + (_chtTitleOY + ry) * _displayScreenWidth + _chtTitleOX;
++		for (uint16 rx = 0; rx < _chtTitleOW; rx++) {
++			if (src[rx] != 0xFF)
++				dst[rx] = src[rx];
++		}
++	}
++	copyDisplayRectToScreen(_chtTitleOX, _chtTitleOY, _chtTitleOW, _chtTitleOH);
++}
++
++// 用英文原文當 key 查中譯；查無則原樣返回
++const char *GfxMgr::getChtTranslation(const char *english) const {
++	if (!_chtEnabled || !_chtLangOn || !english)   // F8 切到英文時 _chtLangOn=false → 回原文
++		return english;
++	Common::HashMap<Common::String, Common::String>::const_iterator it = _chtTranslation.find(Common::String(english));
++	if (it != _chtTranslation.end())
++		return it->_value.c_str();
++	return english;
++}
++
++// 在文字格 (row,column) 畫一個 16x16 中文字
++void GfxMgr::drawBig5Character(int16 row, int16 column, uint16 big5, byte foreground, byte background) {
++	int16 x = column;
++	int16 y = row;
++	translateFontPosToDisplayScreen(x, y); // x=column*16, y=row*16（hi-res）
++	drawBig5CharacterOnDisplay(x, y, big5, foreground, background);
++}
++
++void GfxMgr::drawBig5CharacterOnDisplay(int16 x, int16 y, uint16 big5, byte foreground, byte background) {
++	if (!_chtFont)
++		return;
++	// background 非 0 才填底（Big5Font 只畫前景 pixel）。0 = 透明，直接畫在既有畫面上
++	//（標題年齡提示疊在標題美術上；訊息框則 background=15 白底，黑字清楚無灰底）。
++	if (background != 0) {
++		for (int16 cy = 0; cy < 16; cy++) {
++			byte *rowPtr = _displayScreen + (y + cy) * _displayScreenWidth + x;
++			for (int16 cx = 0; cx < 16; cx++)
++				rowPtr[cx] = background;
++		}
++	}
++	byte *dest = _displayScreen + y * _displayScreenWidth + x;
++	_chtFont->drawBig5Char(dest, big5, 16, 16, _displayScreenWidth, foreground, background, false, 1);
++	copyDisplayRectToScreen(x, y, 16, 16); // 中文字固定 16x16（不用 _displayFontWidth，原生模式為 8）
++}
++
+ void GfxMgr::drawCharacter(int16 row, int16 column, byte character, byte foreground, byte background, bool disabledLook) {
+ 	int16 x = column;
+ 	int16 y = row;
+diff --git a/engines/agi/graphics.h b/engines/agi/graphics.h
+index 320019fa..9a750344 100644
+--- a/engines/agi/graphics.h
++++ b/engines/agi/graphics.h
+@@ -24,6 +24,13 @@
+ 
+ #include "agi/font.h"
+ 
++#include "common/hashmap.h"
++#include "common/hash-str.h"
++
++namespace Graphics {
++class Big5Font;
++}
++
+ namespace Agi {
+ 
+ #define SCRIPT_WIDTH    160
+@@ -60,6 +67,18 @@ private:
+ 	AgiBase *_vm;
+ 	GfxFont *_font;
+ 
++	// 繁體中文化 (Big5) 狀態
++	bool _chtEnabled;
++	bool _chtLangOn;   // F8 中/英切換：true=顯示中譯、false=露出英文原文（獨立於 _chtEnabled，
++	                   // 因為 _chtEnabled 還牽動 hi-res 與 Big5 繪製 gate，不能拿來當語言開關）
++	Graphics::Big5Font *_chtFont;
++	Common::HashMap<Common::String, Common::String> _chtTranslation;
++
++	// 繁體中文化：標題畫面「幻想空間」中文標題疊圖（.ovl 索引點陣）
++	byte  *_chtTitleOverlay;   // 非透明=EGA 索引、0xFF=透明；nullptr 表未載入
++	uint16 _chtTitleOX, _chtTitleOY, _chtTitleOW, _chtTitleOH; // 外接框
++	int    _chtTitlePic;       // 首次 show.pic 的 pic 編號（=標題 pic）；-1 未捕捉
++
+ 	uint8 _paletteGfxMode[256 * 3];
+ 	uint8 _paletteTextMode[256 * 3];
+ 
+@@ -69,6 +88,17 @@ private:
+ public:
+ 	GfxMgr(AgiBase *vm, GfxFont *font);
+ 
++	// 繁體中文化：載入 Big5 字型 + translation.tsv、查表替換、繪 16x16 中文字
++	void loadChtResources();
++	bool chtEnabled() const { return _chtEnabled; }
++	bool chtLangOn() const { return _chtLangOn; }
++	void toggleChtLang() { _chtLangOn = !_chtLangOn; }   // F8 切換中/英
++	const char *getChtTranslation(const char *english) const;
++	void drawBig5Character(int16 row, int16 column, uint16 big5, byte foreground, byte background);
++	void drawBig5CharacterOnDisplay(int16 x, int16 y, uint16 big5, byte foreground, byte background);
++	void loadChtTitleOverlay();           // 載入 kq1_title.ovl（若存在）
++	void drawChtTitleOverlay(int16 picNr); // 若 picNr 為標題 pic 則疊繪中文標題
++
+ 	void initVideo();
+ 	void deinitVideo();
+ 	static void initPalette(uint8 *destPalette, const uint8 *paletteData, uint colorCount = 16, uint fromBits = 6, uint toBits = 8);
+diff --git a/engines/agi/keyboard.cpp b/engines/agi/keyboard.cpp
+index 3c19773e..30c44ef8 100644
+--- a/engines/agi/keyboard.cpp
++++ b/engines/agi/keyboard.cpp
+@@ -130,6 +130,31 @@ void AgiEngine::processScummVMEvents() {
+ 			}
+ 			break;
+ 		case Common::EVENT_KEYDOWN:
++			// 繁體中文化：F8 = 中/英文對照切換。攔截後不傳給遊戲（避免 AGI_KEY_F8 被腳本吃掉），
++			// 並就地把當前訊息框用新語言重繪。僅在中文化啟用時攔截，否則 F8 維持原行為。
++			if (_gfx->chtEnabled() && event.kbd.keycode == Common::KEYCODE_F8) {
++				_gfx->toggleChtLang();
++				_text->chtToggleRedraw();
++				break;
++			}
++			// 繁體中文化：Ctrl+Alt+X = 年齡驗證即時跳過。在驗證室（room 6）直接跳到遊戲開始
++			// （room 11，賴瑞在老左酒吧外），繞過年齡+問答。設 pending 旗標並打斷當前輸入內迴圈
++			// （年齡輸入 getstring / 問答 havekey），讓 interpretCycle 換場立即生效。
++			if (_gfx->chtEnabled() && event.kbd.keycode == Common::KEYCODE_x &&
++			    (event.kbd.flags & Common::KBD_CTRL) && (event.kbd.flags & Common::KBD_ALT)) {
++				// Ctrl+Alt+X = 一鍵略過驗證，直接換到遊戲開場（room 11，賴瑞在老左酒吧外）。
++				// 只在驗證室（room 6）動作；一律攔截消化，避免 'x' 漏進遊戲 parser 輸入列。
++				if (getVar(VM_VAR_CURRENT_ROOM) == 6) {
++					// 比照 restore 從 inner loop 直接動手：關訊息框 → 中止當前 logic 與 inner loop → newRoom。
++					_chtVerified = true;
++					chtMarkVerified();            // 寫 flag，之後開機自動略過
++					_text->closeWindow();         // 關掉年齡提示訊息框
++					_game.exitAllLogics = true;   // 中止驗證室 logic（空年齡不被當答案）
++					cycleInnerLoopInactive();     // 打斷當前輸入內迴圈
++					newRoom(11);                  // 直接進遊戲開場
++				}
++				break;
++			}
+ 			key = event.kbd.ascii;
+ 			if (event.kbd.keycode >= Common::KEYCODE_KP0 && event.kbd.keycode <= Common::KEYCODE_KP9) {
+ 				if (!(event.kbd.flags & Common::KBD_NUM)) {
+diff --git a/engines/agi/op_cmd.cpp b/engines/agi/op_cmd.cpp
+index 6d27452b..cb018272 100644
+--- a/engines/agi/op_cmd.cpp
++++ b/engines/agi/op_cmd.cpp
+@@ -2083,10 +2083,15 @@ void cmdGetNum(AgiGame *state, AgiEngine *vm, uint8 *parameter) {
+ 
+ 	textMgr->inputEditOff();
+ 
+-	vm->cycleInnerLoopActive(CYCLE_INNERLOOP_GETNUMBER);
++	// 繁體中文化：已驗證 + 在驗證室(room 6) → 年齡自動填 99，跳過輸入等待
++	if (vm->_chtVerified && vm->getVar(VM_VAR_CURRENT_ROOM) == 6) {
++		textMgr->stringSet("99");
++	} else {
++		vm->cycleInnerLoopActive(CYCLE_INNERLOOP_GETNUMBER);
+ 
+-	textMgr->stringSet("");
+-	textMgr->stringEdit(3);
++		textMgr->stringSet("");
++		textMgr->stringEdit(3);
++	}
+ 
+ 	textMgr->promptRedraw();
+ 
+diff --git a/engines/agi/picture.cpp b/engines/agi/picture.cpp
+index 70ce126d..030c9762 100644
+--- a/engines/agi/picture.cpp
++++ b/engines/agi/picture.cpp
+@@ -814,6 +814,7 @@ void PictureMgr::showPicture(int16 x, int16 y, int16 width, int16 height) {
+ 	debugC(kDebugLevelPictures, "Show picture");
+ 
+ 	_gfx->render_Block(x, y, width, height);
++	_gfx->drawChtTitleOverlay(_resourceNr); // 繁中：標題 pic 疊「幻想空間」
+ }
+ 
+ /**
+@@ -859,6 +860,7 @@ void PictureMgr::showPictureWithTransition() {
+ 	}
+ 
+ 	_gfx->render_Block(0, 0, SCRIPT_WIDTH, SCRIPT_HEIGHT);
++	_gfx->drawChtTitleOverlay(_resourceNr); // 繁中：標題 pic 疊「幻想空間」
+ }
+ 
+ } // End of namespace Agi
+diff --git a/engines/agi/systemui.cpp b/engines/agi/systemui.cpp
+index 40cd61af..90a816d0 100644
+--- a/engines/agi/systemui.cpp
++++ b/engines/agi/systemui.cpp
+@@ -145,6 +145,30 @@ SystemUI::SystemUI(AgiEngine *vm, GfxMgr *gfx, TextMgr *text) {
+ 		break;
+ 	}
+ 
++	// 繁體中文化：EGA/AGI 以「Big5 字型檔存在」啟用中文（不帶 --language，故 getLanguage()
++	// 不是 ZH_TWN，不能用 case 攔）。改用 _gfx->chtEnabled() 覆蓋系統 UI（道具欄/暫停/存讀檔）
++	// 為 Big5。狀態列 Score/Sound 保留英文（非 messageBox 路徑，Big5 渲染風險高）。字皆在 EGA 字庫。
++	if (_gfx->chtEnabled()) {
++		// 狀態列：走 displayText → 支援 Big5；%v3/%v7 由 stringPrintf 代換成分數。col 1 起 / sound 於 col 30，中文較短不會撞。
++		_textStatusScore = "\xB1\x6F\xA4\xC0\xA1\x47%v3 / %v7";
++		_textStatusSoundOn = "\xC1\x6E\xAD\xB5\xA1\x47\xB6\x7D";
++		_textStatusSoundOff = "\xC1\x6E\xAD\xB5\xA1\x47\xC3\xF6";
++		_textPause = "  \xB9\x43\xC0\xB8\xBC\xC8\xB0\xB1\xA1\x43\n\xAB\xF6 Enter \xC4\x7E\xC4\xF2\xA1\x43";
++		_textRestart = "\xAB\xF6 ENTER \xAD\xAB\xB7\x73\xB6\x7D\xA9\x6C\xB9\x43\xC0\xB8\xA1\x43\n\n\xAB\xF6 ESC \xC4\x7E\xC4\xF2\xA5\xD8\xAB\x65\xAA\xBA\xB9\x43\xC0\xB8\xA1\x43";
++		_textQuit = "\xAB\xF6 ENTER \xC2\xF7\xB6\x7D\xA1\x43\n\xAB\xF6 ESC \xC4\x7E\xC4\xF2\xB9\x43\xAA\xB1\xA1\x43";
++		_textInventoryYouAreCarrying = "\xA7\x41\xA8\xAD\xA4\x57\xB1\x61\xB5\xDB\xA1\x47";
++		_textInventoryNothing = "\xAA\xC5\xAA\xC5\xA6\x70\xA4\x5D";
++		_textInventorySelectItems = "\xAB\xF6 ENTER \xBF\xEF\xA8\xFA\xA1\x41" "ESC \xA8\xFA\xAE\xF8";
++		_textInventoryReturnToGame = "\xAB\xF6\xA5\xF4\xB7\x4E\xC1\xE4\xA6\x5E\xA8\xEC\xB9\x43\xC0\xB8";
++		_textSaveGameSelectSlot = "\xA5\xCE\xA4\xE8\xA6\x56\xC1\xE4\xBF\xEF\xBE\xDC\xAD\x6E\xA6\x73\xC0\xC9\xAA\xBA\xC4\xE6\xA6\xEC\xA1\x43\xAB\xF6 ENTER \xA6\x73\xA4\x4A\xB8\xD3\xC4\xE6\xA1\x41" "ESC \xA8\xFA\xAE\xF8\xA6\x73\xC0\xC9\xA1\x43";
++		_textSaveGameEnterDescription = "\xB7\x51\xAB\xE7\xBB\xF2\xB4\x79\xAD\x7A\xB3\x6F\xAD\xD3\xA6\x73\xC0\xC9\xA1\x48\n\n";
++		_textSaveGameVerify = "\xA7\x59\xB1\x4E\xA6\x73\xC0\xC9\xA1\x41\n\xB4\x79\xAD\x7A\xAC\xB0\xA1\x47\n\n%s\n\n\xC0\xC9\xAE\xD7\xA1\x47\n%s\n\n\xAB\xF6 ENTER \xC4\x7E\xC4\xF2\xA1\x43\n\xAB\xF6 ESC \xA8\xFA\xAE\xF8\xA1\x43";
++		_textRestoreGameNoSlots = "ScummVM \xA6\x73\xC0\xC9\xA5\xD8\xBF\xFD\xA4\xA4\n\n\xA8\x53\xA6\xB3\xA5\x69\xB8\xFC\xA4\x4A\xAA\xBA\xA6\x73\xC0\xC9\xA1\x43\n\n\xAB\xF6 ENTER \xC4\x7E\xC4\xF2\xA1\x43";
++		_textRestoreGameSelectSlot = "\xA5\xCE\xA4\xE8\xA6\x56\xC1\xE4\xBF\xEF\xBE\xDC\xAD\x6E\xB8\xFC\xA4\x4A\xAA\xBA\xA6\x73\xC0\xC9\xA1\x43\xAB\xF6 ENTER \xB8\xFC\xA4\x4A\xA1\x41" "ESC \xA8\xFA\xAE\xF8\xA1\x43";
++		_textRestoreGameError = "\xB8\xFC\xA4\x4A\xA6\x73\xC0\xC9\xAE\xC9\xB5\x6F\xA5\xCD\xBF\xF9\xBB\x7E\xA1\x43\n\xAB\xF6 ENTER \xC2\xF7\xB6\x7D\xA1\x43";
++		_textRestoreGameVerify = "\xA7\x59\xB1\x4E\xB8\xFC\xA4\x4A\xA6\x73\xC0\xC9\xA1\x41\n\xB4\x79\xAD\x7A\xAC\xB0\xA1\x47\n\n%s\n\n\xA8\xD3\xA6\xDB\xC0\xC9\xAE\xD7\xA1\x47\n%s\n\n\xAB\xF6 ENTER \xC4\x7E\xC4\xF2\xA1\x43\n\xAB\xF6 ESC \xA8\xFA\xAE\xF8\xA1\x43";
++	}
++
+ 	// Now replace some text again for some render modes
+ 	switch (_vm->_renderMode) {
+ 	case Common::kRenderAmiga:
+diff --git a/engines/agi/text.cpp b/engines/agi/text.cpp
+index cc02816b..d06fd0fb 100644
+--- a/engines/agi/text.cpp
++++ b/engines/agi/text.cpp
+@@ -338,6 +338,10 @@ Common::String rightAlign(Common::String line, va_list args) {
+ }
+ 
+ void TextMgr::displayText(const char *textPtr, bool disabledLook) {
++	// 繁體中文化：display 路徑（非 messageBox）的整串替換（messageBox 路徑已在其入口先換過，
++	// 這裡拿到的是已斷行的中文子串，查無 key 不影響）
++	textPtr = _gfx->getChtTranslation(textPtr);
++
+ 	Common::String textString;
+ 	if (_vm->isLanguageRTL()) {
+ 		textString = textPtr;
+@@ -357,11 +361,37 @@ void TextMgr::displayText(const char *textPtr, bool disabledLook) {
+ 		if (!curCharacter)
+ 			break;
+ 
++		// 繁體中文化：偵測 Big5 lead byte（0x81-0xFE）+ trail，畫一個 16x16 中文字（佔一個字格）
++		if (_gfx->chtEnabled() && curCharacter >= 0x81 && curCharacter <= 0xFE && curTextPtr[1]) {
++			uint16 big5 = (curCharacter << 8) | (byte)curTextPtr[1];
++			displayBig5Character(big5);
++			curTextPtr += 2;
++			continue;
++		}
++
+ 		curTextPtr++;
+ 		displayCharacter(curCharacter, disabledLook);
+ 	}
+ }
+ 
++// 繁體中文化：在目前文字格畫一個 16x16 中文字，游標前進一格（換行邏輯同 displayCharacter）
++void TextMgr::displayBig5Character(uint16 big5) {
++	TextPos_Struct charCurPos;
++	charPos_Get(&charCurPos);
++
++	// 用未經點陣字 invert 轉換的「原始意圖色」：訊息框=黑字(0)/白底(15)、標題年齡提示=白字(15)/透明(0)。
++	// 不用 combinedBackground——那含 invert 位(0x08)是給 8x8 點陣字 XOR 反白用的，Big5 直接填會變灰底。
++	_gfx->drawBig5Character(charCurPos.row, charCurPos.column, big5, _textAttrib.foreground, _textAttrib.background);
++
++	// 640x400 hi-res：字格寬=16px，一個 16x16 中文字佔 1 格
++	charCurPos.column += 1;
++	if (charCurPos.column <= (FONT_COLUMN_CHARACTERS - 1)) {
++		charPos_Set(&charCurPos);
++	} else {
++		displayCharacter(0x0D); // go to next line
++	}
++}
++
+ void TextMgr::displayCharacter(byte character, bool disabledLook) {
+ 	TextPos_Struct charCurPos;
+ 
+@@ -426,7 +456,18 @@ void TextMgr::printAt(int16 textNr, int16 textPos_Row, int16 textPos_Column, int
+ }
+ 
+ bool TextMgr::messageBox(const char *textPtr) {
++	// 繁體中文化：快取英文原文與排版意圖，供 F8 中/英切換時就地重繪本框
++	_chtToggleOriginal = textPtr;
++	_chtToggleWantedRow = _messageState.wanted_TextPos.row;
++	_chtToggleWantedColumn = _messageState.wanted_TextPos.column;
++	_chtToggleWantedWidth = _messageState.wanted_Text_Width;
++
++	// 繁體中文化：用英文原文查表換成 Big5 中譯（查無則原樣）
++	textPtr = _gfx->getChtTranslation(textPtr);
++
+ 	drawMessageBox(textPtr);
++	// drawMessageBox 內部若有舊窗會先 closeWindow（清掉旗標），故在其後才標記本框可重繪
++	_chtToggleBoxActive = true;
+ 
+ 	if (_vm->getFlag(VM_FLAG_OUTPUT_MODE)) {
+ 		// non-blocking window
+@@ -630,6 +671,19 @@ void TextMgr::closeWindow(bool ttsStopSpeech) {
+ 
+ 	_messageState.dialogue_Open = false;
+ 	_messageState.window_Active = false;
++	_chtToggleBoxActive = false;   // 繁體中文化：框關了就不再可重繪（chtToggleRedraw 會在自身重繪後重設回 true）
++}
++
++// 繁體中文化：F8 切換後，就地把當前訊息框用新語言重繪
++void TextMgr::chtToggleRedraw() {
++	if (!_chtToggleBoxActive || !_messageState.window_Active || _chtToggleOriginal.empty())
++		return;
++	// 還原原本的排版意圖（drawMessageBox 會讀 wanted_*），再用當前語言重譯重繪
++	_messageState.wanted_TextPos.row = _chtToggleWantedRow;
++	_messageState.wanted_TextPos.column = _chtToggleWantedColumn;
++	_messageState.wanted_Text_Width = _chtToggleWantedWidth;
++	drawMessageBox(_gfx->getChtTranslation(_chtToggleOriginal.c_str()));
++	_chtToggleBoxActive = true;   // drawMessageBox 內部 closeWindow 清了旗標，重繪後設回可再切
+ }
+ 
+ void TextMgr::statusRow_Set(int16 row) {
+@@ -1179,6 +1233,28 @@ void TextMgr::stringRememberForAutoComplete(bool entered) {
+  * @param originalText  String to wrap.
+  * @param maxWidth      Length of line.
+  */
++// 繁體中文化：計算 [start, start+len) 的顯示欄寬。Big5(0x81-0xFE lead + trail)一個字佔 1 欄（16px 格），
++// 其餘每 byte 1 欄。原本 wrap 用 byte 數當寬度，Big5 每字 2 byte 會被當 2 欄 → 短句過早換行。
++static int16 chtColWidth(const char *t, int16 start, int16 len) {
++	int16 cols = 0, i = start, end = start + len;
++	while (i < end) {
++		byte c = (byte)t[i];
++		if (c >= 0x81 && c <= 0xFE && i + 1 < end) { cols++; i += 2; }
++		else { cols++; i++; }
++	}
++	return cols;
++}
++// 從 start 起累積到 maxCols 顯示欄所需的 byte 長度（不切斷 Big5 字）。
++static int16 chtBytesForCols(const char *t, int16 start, int16 len, int16 maxCols) {
++	int16 cols = 0, i = start, end = start + len;
++	while (i < end && cols < maxCols) {
++		byte c = (byte)t[i];
++		if (c >= 0x81 && c <= 0xFE && i + 1 < end) i += 2; else i++;
++		cols++;
++	}
++	return i - start;
++}
++
+ char *TextMgr::stringWordWrap(const char *originalText, int16 maxWidth, int16 *calculatedWidthPtr, int16 *calculatedHeightPtr) {
+ 	static char resultWrappedBuffer[2000];
+ 	int16 boxWidth = 0;
+@@ -1214,10 +1290,11 @@ char *TextMgr::stringWordWrap(const char *originalText, int16 maxWidth, int16 *c
+ 		}
+ 		byte wordEndChar = originalText[curReadPos];
+ 
+-		// Calculate word length
++		// Calculate word length（wordLen=byte 數；wordCols=顯示欄寬，Big5 每字算 1 欄）
+ 		int16 wordLen = curReadPos - wordStartPos;
++		int16 wordCols = chtColWidth(originalText, wordStartPos, wordLen);
+ 
+-		if (wordLen >= lineWidthLeft) {
++		if (wordCols >= lineWidthLeft) {
+ 			// Not enough space left
+ 
+ 			// If first character right after the new line is a space, skip over it
+@@ -1225,13 +1302,15 @@ char *TextMgr::stringWordWrap(const char *originalText, int16 maxWidth, int16 *c
+ 				if (originalText[wordStartPos] == ' ') {
+ 					wordStartPos++;
+ 					wordLen--;
++					wordCols = chtColWidth(originalText, wordStartPos, wordLen);
+ 				}
+ 			}
+ 
+-			if (wordLen > maxWidth) {
+-				// Word way too long, split it in half
+-				curReadPos = curReadPos - (wordLen - maxWidth);
+-				wordLen = maxWidth;
++			if (wordCols > maxWidth) {
++				// Word way too long, split it（依顯示欄寬切，不切斷 Big5 字）
++				wordLen = chtBytesForCols(originalText, wordStartPos, wordLen, maxWidth);
++				curReadPos = wordStartPos + wordLen;
++				wordCols = chtColWidth(originalText, wordStartPos, wordLen);
+ 			}
+ 
+ 			// Add new line
+@@ -1246,10 +1325,10 @@ char *TextMgr::stringWordWrap(const char *originalText, int16 maxWidth, int16 *c
+ 				break;
+ 		}
+ 
+-		// Copy current word over
++		// Copy current word over（複製 byte，寬度累計用欄寬）
+ 		memcpy(&resultWrappedBuffer[curWritePos], &originalText[wordStartPos], wordLen);
+-		lineWidth += wordLen;
+-		lineWidthLeft -= wordLen;
++		lineWidth += wordCols;
++		lineWidthLeft -= wordCols;
+ 		curWritePos += wordLen;
+ 
+ 		if (wordEndChar == 0x0A) {
+@@ -1344,7 +1423,10 @@ char *TextMgr::stringPrintf(const char *originalText) {
+ 				break;
+ 			case 'g':
+ 				i = strtoul(originalText, nullptr, 10) - 1;
+-				safeStrcat(resultString, _vm->_game.logics[0].texts[i]);
++				// 繁體中文化：%g 插入的是 logic 0 的訊息，本身也是一則遊戲文字，
++				// 要各自查表。外層 displayText 只對「拼接完成」的整串查表，那串
++				// 不是表裡的 key，查不到就會留下英文（中英混雜）。
++				safeStrcat(resultString, _gfx->getChtTranslation(_vm->_game.logics[0].texts[i]));
+ 				break;
+ 			case 'w':
+ 				i = strtoul(originalText, nullptr, 10) - 1;
+@@ -1356,8 +1438,12 @@ char *TextMgr::stringPrintf(const char *originalText) {
+ 				break;
+ 			case 'm':
+ 				i = strtoul(originalText, nullptr, 10) - 1;
++				// 繁體中文化：同 %g，%m 插入的子訊息要先查表再遞迴展開。
++				// 例：「The briefing room contains ... %m16」的譯文保留了 %m16，
++				// 展開的那則若不查表就會變成「簡報室裡…。On the far wall are…」。
+ 				if (_vm->_game.logics[_vm->_game.curLogicNr].numTexts > i)
+-					safeStrcat(resultString, stringPrintf(_vm->_game.logics[_vm->_game.curLogicNr].texts[i]));
++					safeStrcat(resultString, stringPrintf(_gfx->getChtTranslation(
++						_vm->_game.logics[_vm->_game.curLogicNr].texts[i])));
+ 				break;
+ 			default:
+ 				break;
+diff --git a/engines/agi/text.h b/engines/agi/text.h
+index 54d61530..b4d14380 100644
+--- a/engines/agi/text.h
++++ b/engines/agi/text.h
+@@ -123,6 +123,7 @@ public:
+ 	void displayAdjustRTL(int16 textRow, int16 textColumn, char *text, int16 calculatedWidth);
+ 	void displayText(const char *textPtr, bool disabledLook = false);
+ 	void displayCharacter(byte character, bool disabledLook = false);
++	void displayBig5Character(uint16 big5); // 繁體中文化：畫 16x16 中文字
+ 
+ 	void displayTextInsideWindow(const char *textPtr, int16 windowRow, int16 windowColumn);
+ 
+@@ -134,6 +135,14 @@ public:
+ 	bool messageBox(const char *textPtr);
+ 	void messageBox_KeyPress(uint16 newKey);
+ 
++	// 繁體中文化：F8 中/英切換時，就地把「當前訊息框」用新語言重繪
++	void chtToggleRedraw();
++	Common::String _chtToggleOriginal;      // 當前訊息框的英文原文（未經查表）
++	int16 _chtToggleWantedRow = -1;         // 重繪時還原原本的排版意圖
++	int16 _chtToggleWantedColumn = -1;
++	int16 _chtToggleWantedWidth = -1;
++	bool  _chtToggleBoxActive = false;      // 是否有可重繪的訊息框
++
+ 	bool _messageBoxCancelled;
+ 
+ 	void drawMessageBox(const char *textPtr, int16 forcedHeight = 0, int16 wantedWidth = 0, bool forcedWidth = false);

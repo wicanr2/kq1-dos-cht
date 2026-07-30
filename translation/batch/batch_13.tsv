@@ -1,0 +1,130 @@
+This tricky little dwarf is quite interested in you!  To be exact, he would like to see what items of value you may be carrying.	This tricky little dwarf is quite interested in you!  To be exact, he would like to see what items of value you may be carrying.
+Looks like the dwarf is running off.  Did he take anything?	Looks like the dwarf is running off.  Did he take anything?
+Talking to this dwarf is a waste of breath.  He's only interested in what you've got in your pockets.	Talking to this dwarf is a waste of breath.  He's only interested in what you've got in your pockets.
+The dwarf is too fast for you to catch.	The dwarf is too fast for you to catch.
+The dwarf, startled by your sudden disappearance, runs away.	The dwarf, startled by your sudden disappearance, runs away.
+You don't see the %s	You don't see the %s
+You're not close enough.	You're not close enough.
+The %s looks like any other %s.	The %s looks like any other %s.
+The %s will not move.	The %s will not move.
+You cannot get the %s.	You cannot get the %s.
+You cannot open the %s.	You cannot open the %s.
+You cannot close the %s.	You cannot close the %s.
+The %s has no smell.	The %s has no smell.
+You cannot move the %s.	You cannot move the %s.
+You wouldn't want to eat the %s.	You wouldn't want to eat the %s.
+You can't climb the %s.	You can't climb the %s.
+The %s has nothing to say.	The %s has nothing to say.
+You're not facing the %s.	You're not facing the %s.
+%ssg.dir	%ssg.dir
+New save-game directory:	New save-game directory:
+%s is not a valid directory	%s is not a valid directory
+You must type a description for the game.	You must type a description for the game.
+File: %s	File: %s
+Your save game disk is full. You must either use another disk or save over an existing saved game.	Your save game disk is full. You must either use another disk or save over an existing saved game.
+That game was saved under a different interpreter. It cannot be restored.	That game was saved under a different interpreter. It cannot be restored.
+I don't understand "%s".	I don't understand "%s".
+That doesn't appear to be a proper sentence.	That doesn't appear to be a proper sentence.
+That sentence doesn't make sense.	That sentence doesn't make sense.
+You've left me responseless.	You've left me responseless.
+Please insert your %s disk in drive %s.	Please insert your %s disk in drive %s.
+King's Quest I SCI  Designed by: Roberta Williams  Version %s Copyright 1990 Sierra On-Line, Inc.	King's Quest I SCI  Designed by: Roberta Williams  Version %s Copyright 1990 Sierra On-Line, Inc.
+King's Quest I SCI  Illustrated by: JEFF CROWE, CINDY WALKER and JENNIFER SHONTZ  Programmed by: JERRY SHAW, GARY KAMIGAWACHI RANDY MACNEILL, RAOUL SAID, CHAD BYE, OLIVER BRELSFORD and MARK WILDEN  Original Music by: KEN ALLEN 	King's Quest I SCI  Illustrated by: JEFF CROWE, CINDY WALKER and JENNIFER SHONTZ  Programmed by: JERRY SHAW, GARY KAMIGAWACHI RANDY MACNEILL, RAOUL SAID, CHAD BYE, OLIVER BRELSFORD and MARK WILDEN  Original Music by: KEN ALLEN 
+King's Quest I SCI  Development System by: JEFF STEPHENSON, ROBERT E. HEITMAN, PABLO GHENIS, JOHN HARTIN, DAN FOY, LARRY SCOTT, JOHN RETTIG, CORINNA ABDUL, COREY COLE, MARK HOOD and ERIC HART  Quality Assurance by: CHRIS CARR and the rest of the gang.	King's Quest I SCI  Development System by: JEFF STEPHENSON, ROBERT E. HEITMAN, PABLO GHENIS, JOHN HARTIN, DAN FOY, LARRY SCOTT, JOHN RETTIG, CORINNA ABDUL, COREY COLE, MARK HOOD and ERIC HART  Quality Assurance by: CHRIS CARR and the rest of the gang.
+DURING THE GAME:  ESC opens and closes the menus,    which show additional shortcuts.  IN DIALOG WINDOWS:  Your current choice is outlined.  Tab and Shift-Tab move between    choices.  ESC always cancels.  IN TYPING WINDOWS:  Arrows, Home, and End move the    cursor.  Ctrl-C clears the line.	DURING THE GAME:  ESC opens and closes the menus,    which show additional shortcuts.  IN DIALOG WINDOWS:  Your current choice is outlined.  Tab and Shift-Tab move between    choices.  ESC always cancels.  IN TYPING WINDOWS:  Arrows, Home, and End move the    cursor.  Ctrl-C clears the line.
+You are unable to duck here.	You are unable to duck here.
+You have no reason to duck - nobody can see you while you're invisible.	You have no reason to duck - nobody can see you while you're invisible.
+You can't jump here.	You can't jump here.
+Very well, I shall wait until you are ready to resume our adventure again.	Very well, I shall wait until you are ready to resume our adventure again.
+This is not a good time to rummage through your belongings.  Try again a little later.	This is not a good time to rummage through your belongings.  Try again a little later.
+You are ducking.	You are ducking.
+You'll have to try that when you're on your feet.	You'll have to try that when you're on your feet.
+As you jump, the ring slips off your finger, and you are visible again.	As you jump, the ring slips off your finger, and you are visible again.
+As you jump, the ring slips off your finger.	As you jump, the ring slips off your finger.
+%s [Collection of size %d]	%s [Collection of size %d]
+%s [List of size %d]	%s [List of size %d]
+%s [Set of size %d]	%s [Set of size %d]
+Turn Off	Turn Off
+Turn On	Turn On
+Debug	Debug
+This large ceramic bowl is now empty.	This large ceramic bowl is now empty.
+This large ceramic bowl is now filled with a savory beef stew.	This large ceramic bowl is now filled with a savory beef stew.
+Unknown word	Unknown word
+Couldn't parse	Couldn't parse
+No response	No response
+King's Quest I	King's Quest I
+ Dagger 	 Dagger 
+This is a fine silver dagger, with a very sharp edge!	This is a fine silver dagger, with a very sharp edge!
+ Chest 	 Chest 
+This Magic chest, one of the three lost treasures of Daventry, is always filled with gold coins.	This Magic chest, one of the three lost treasures of Daventry, is always filled with gold coins.
+ Carrot 	 Carrot 
+This looks like an ordinary carrot.	This looks like an ordinary carrot.
+This is a simple gold key.	This is a simple gold key.
+There is a message written on the note: "Sometimes it is wise to think backwards."	There is a message written on the note: "Sometimes it is wise to think backwards."
+ Magic Ring 	 Magic Ring 
+Your hand tingles slightly as you look at this jewelled ring.	Your hand tingles slightly as you look at this jewelled ring.
+ Four-leaf Clover 	 Four-leaf Clover 
+You are holding a large four-leaf clover.	You are holding a large four-leaf clover.
+ Ceramic Bowl 	 Ceramic Bowl 
+Inscribed on the inside of this empty ceramic bowl is the word "Fill."	Inscribed on the inside of this empty ceramic bowl is the word "Fill."
+ Empty Water Bucket 	 Empty Water Bucket 
+You are holding an empty wooden bucket.	You are holding an empty wooden bucket.
+ Pebbles 	 Pebbles 
+You have a pocketful of smooth, rounded pebbles.	You have a pocketful of smooth, rounded pebbles.
+ Leather Slingshot 	 Leather Slingshot 
+This is a small but sturdy slingshot.	This is a small but sturdy slingshot.
+ Pouch 	 Pouch 
+You are holding a plain leather pouch.	You are holding a plain leather pouch.
+ Sceptre 	 Sceptre 
+This jewelled sceptre belongs to the King of the Leprechauns.	This jewelled sceptre belongs to the King of the Leprechauns.
+ Cheese 	 Cheese 
+This is an extremely fragrant piece of Swiss cheese.	This is an extremely fragrant piece of Swiss cheese.
+ Magic Mirror 	 Magic Mirror 
+This is the magic mirror, one of the three treasures of Daventry.	This is the magic mirror, one of the three treasures of Daventry.
+ Gold Egg 	 Gold Egg 
+You are holding a lovely golden egg.	You are holding a lovely golden egg.
+ Magic Shield 	 Magic Shield 
+This is the magic shield, one of the three treasures of Daventry.	This is the magic shield, one of the three treasures of Daventry.
+ Fiddle 	 Fiddle 
+This is the woodcutter's old fiddle.	This is the woodcutter's old fiddle.
+You are holding an ordinary walnut.	You are holding an ordinary walnut.
+ Mushroom 	 Mushroom 
+This is a small, unusual-looking mushroom.	This is a small, unusual-looking mushroom.
+ Beans 	 Beans 
+You are holding a handful of small beans.	You are holding a handful of small beans.
+ Full Water Bucket 	 Full Water Bucket 
+This old wooden bucket is now filled with clear water.	This old wooden bucket is now filled with clear water.
+Restore	Restore
+ Restart 	 Restart 
+ Pebble 	 Pebble 
+Ripple	Ripple
+A sturdy bridge has been built here to span the moat.	A sturdy bridge has been built here to span the moat.
+Massive turrets, from which the guards can defend the castle, stretch to the sky above.	Massive turrets, from which the guards can defend the castle, stretch to the sky above.
+The trees around the castle are tall and old; they were just as tall back when King Edward was just a young prince!	The trees around the castle are tall and old; they were just as tall back when King Edward was just a young prince!
+The moving rock rolls downhill...and right into you.   A crushing defeat.	The moving rock rolls downhill...and right into you.   A crushing defeat.
+This rock is less distinctive than the one next to it.	This rock is less distinctive than the one next to it.
+There is a dense grove of trees here.	There is a dense grove of trees here.
+This is a serene mountain lake with a small beach of pebbles on its edge.	This is a serene mountain lake with a small beach of pebbles on its edge.
+On the beach are some smooth pebbles.	On the beach are some smooth pebbles.
+There are many lush trees surrounding the lake.	There are many lush trees surrounding the lake.
+An old, dignified oak tree rests near the shore of the lake.	An old, dignified oak tree rests near the shore of the lake.
+big rock	big rock
+The roots of the oak are entwined around this craggy cluster of rocks.	The roots of the oak are entwined around this craggy cluster of rocks.
+small rock	small rock
+A boulder sits at the side of lake, the water lapping gently against its sides.	A boulder sits at the side of lake, the water lapping gently against its sides.
+The roots of the oak spread out here to soak up water from the moist earth.	The roots of the oak spread out here to soak up water from the moist earth.
+A totally typical example of the trees in this forest.	A totally typical example of the trees in this forest.
+You've found a bush, but there isn't a quail in the game.	You've found a bush, but there isn't a quail in the game.
+A distinctively common tree sits near the shore of the lake.	A distinctively common tree sits near the shore of the lake.
+large_tree	large_tree
+large_tree1	large_tree1
+large_tree2	large_tree2
+large_tree3	large_tree3
+large_tree4	large_tree4
+large_tree5	large_tree5
+You can just see the northern edge of a nearby lake.	You can just see the northern edge of a nearby lake.
+There's a single large rock sitting off to the side.	There's a single large rock sitting off to the side.
+A majestic old tree stands nearby.	A majestic old tree stands nearby.
+This is a beautiful little lake.	This is a beautiful little lake.
+small tree	small tree
+This is just one of the many small trees adorning Daventry's countryside.	This is just one of the many small trees adorning Daventry's countryside.

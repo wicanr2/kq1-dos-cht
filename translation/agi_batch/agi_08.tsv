@@ -1,0 +1,129 @@
+   Chris Iden   	   Chris Iden   
+Graphics by:    	Graphics by:    
+ Doug MacNeill  	 Doug MacNeill  
+  Greg Rowland  	  Greg Rowland  
+New Version by: 	New Version by: 
+ Jeff Stephenson	 Jeff Stephenson
+  Sol Ackerman  	  Sol Ackerman  
+Thanks to:      	Thanks to:      
+ Linda Ackerman  	 Linda Ackerman  
+  Mark Crowe     	  Mark Crowe     
+   Robert Heitman	   Robert Heitman
+    Scott Murphy 	    Scott Murphy 
+(c) copyright SIERRA On-Line Inc.  1987	(c) copyright SIERRA On-Line Inc.  1987
+              KING'S QUEST	              KING'S QUEST
+    F1 displays this message.	    F1 displays this message.
+    F2 turns the sound off and on.	    F2 turns the sound off and on.
+    F3 retypes the last line typed.	    F3 retypes the last line typed.
+    F5 saves your current game.	    F5 saves your current game.
+    F7 restores a saved game.	    F7 restores a saved game.
+    F9 restarts the game.	    F9 restarts the game.
+   TAB shows the status screen.	   TAB shows the status screen.
+   ESC activates the menus.	   ESC activates the menus.
+     0 for jumping	     0 for jumping
+     - for ducking	     - for ducking
+     = for swimming	     = for swimming
+Ctrl-J sets up your joystick.	Ctrl-J sets up your joystick.
+Ctrl-R toggles graphics mode.	Ctrl-R toggles graphics mode.
+    F1 or HELP displays this message.	    F1 or HELP displays this message.
+   ESC activates the menus. (see below)	   ESC activates the menus. (see below)
+     = for swimming (see below)	     = for swimming (see below)
+Ctrl-J toggles joystick/mouse.	Ctrl-J toggles joystick/mouse.
+Clicking the joystick button or the\n right mouse button also activates\n the menus.	Clicking the joystick button or the\n right mouse button also activates\n the menus.
+Double-clicking the joystick button\n or the right mouse button also\n initiates swimming.	Double-clicking the joystick button\n or the right mouse button also\n initiates swimming.
+discard.view(%v18):%m30	discard.view(%v18):%m30
+set.view(%v18,_):%m26	set.view(%v18,_):%m26
+set.view(_,%v18):%m30	set.view(_,%v18):%m30
+set.loop(%v18,_):%m26	set.loop(%v18,_):%m26
+set.loop(%v18,_):\nBad loop #.%m25	set.loop(%v18,_):\nBad loop #.%m25
+set.loop(%v18,_):%m31	set.loop(%v18,_):%m31
+set.cel(%v18,_):%m26	set.cel(%v18,_):%m26
+set.cel(%v18,_):\nBad cel #.%m25	set.cel(%v18,_):\nBad cel #.%m25
+sound(%v18):\nSound not loaded.%m25	sound(%v18):\nSound not loaded.%m25
+set.cel(%v18,_):%m31	set.cel(%v18,_):%m31
+Script buffer overflow.\nMaximum size = %v18%m25	Script buffer overflow.\nMaximum size = %v18%m25
+erase(%v18):%m26	erase(%v18):%m26
+animate.obj(%v18):%m26	animate.obj(%v18):%m26
+print(%v18): no message%m25	print(%v18): no message%m25
+Bad test: %v18%m25	Bad test: %v18%m25
+Bad action: %v18%m25	Bad action: %v18%m25
+start.update(%v18):%m28	start.update(%v18):%m28
+draw.pic(%v18):%m32	draw.pic(%v18):%m32
+draw(%v18):%m26	draw(%v18):%m26
+draw(%v18):%m31	draw(%v18):%m31
+discard.pic(%v18):%m32	discard.pic(%v18):%m32
+set.scan.start() already active\nin logic %v18.%m25	set.scan.start() already active\nin logic %v18.%m25
+get(%v18) or put(%v18):%m26	get(%v18) or put(%v18):%m26
+\nPress ESC to quit.	\nPress ESC to quit.
+%m27.%m25	%m27.%m25
+\nBad object number	\nBad object number
+%m27 or object not drawn.%m25	%m27 or object not drawn.%m25
+\nView not 	\nView not 
+%m29loaded.%m25	%m29loaded.%m25
+%m29set.%m25	%m29set.%m25
+Picture not loaded.%m25	Picture not loaded.%m25
+new room: 	new room: 
+x: 	x: 
+y: 	y: 
+object number: 	object number: 
+var number: 	var number: 
+var value: 	var value: 
+object #: 	object #: 
+var %v73: %v72	var %v73: %v72
+flag number: 	flag number: 
+flag %v73 is set	flag %v73 is set
+flag %v73 is not set	flag %v73 is not set
+Word not known: 	Word not known: 
+%m12%w1	%m12%w1
+%m12%w2	%m12%w2
+%m12%w3	%m12%w3
+No response to input.	No response to input.
+We, at Sierra, wish to thank you for playing King's Quest. We are very sorry that you did not succeed and hope you will fare better next time. Good luck.	We, at Sierra, wish to thank you for playing King's Quest. We are very sorry that you did not succeed and hope you will fare better next time. Good luck.
+As you can no longer continue, I can only permit you to: Restore Game,  Restart Game or Take Inventory. Sorry.	As you can no longer continue, I can only permit you to: Restore Game,  Restart Game or Take Inventory. Sorry.
+We, at Sierra, wish to thank you for playing King's Quest. We are pleased to see that you are doing so well and hope that your score will keep improving.	We, at Sierra, wish to thank you for playing King's Quest. We are pleased to see that you are doing so well and hope that your score will keep improving.
+We, at Sierra, wish to thank you for playing King's Quest. We are delighted by your score and hope you are enjoying the game.	We, at Sierra, wish to thank you for playing King's Quest. We are delighted by your score and hope you are enjoying the game.
+As you will never get out of this cage alive, I can only permit you to: Restore Game, Restart Game or Take Inventory. Sorry.	As you will never get out of this cage alive, I can only permit you to: Restore Game, Restart Game or Take Inventory. Sorry.
+Unfortunately, with the moat population swimming is not possible.	Unfortunately, with the moat population swimming is not possible.
+You need to be in the water in order to swim.	You need to be in the water in order to swim.
+You are already swimming!	You are already swimming!
+The swift current does not allow for swimming.	The swift current does not allow for swimming.
+It appears you have become normal size again.	It appears you have become normal size again.
+You see nothing special.	You see nothing special.
+You cannot get the "%w2". At least not now!	You cannot get the "%w2". At least not now!
+There is no reason to do that.	There is no reason to do that.
+The "%w2" doesn't appeal just now.	The "%w2" doesn't appeal just now.
+No. That would just waste time.	No. That would just waste time.
+You can try to go there.	You can try to go there.
+That would be inappropriate at this time.	That would be inappropriate at this time.
+Hello."	Hello."
+OK. "%w2"	OK. "%w2"
+You will have to find him yourself.	You will have to find him yourself.
+You will have to find her yourself.	You will have to find her yourself.
+You will have to find it yourself.	You will have to find it yourself.
+There is no "%w2" here.	There is no "%w2" here.
+What do you wish to do with it???	What do you wish to do with it???
+You can't eat the mushroom if you don't have it!	You can't eat the mushroom if you don't have it!
+You can't do that--at least not now!	You can't do that--at least not now!
+Not right now!	Not right now!
+There is nobody here but you!	There is nobody here but you!
+Just say what you wish to get.	Just say what you wish to get.
+You get no response from the "%w2".	You get no response from the "%w2".
+I don't understand "%w1".	I don't understand "%w1".
+I don't understand "%w2".	I don't understand "%w2".
+I don't understand "%w3".	I don't understand "%w3".
+Fill what?	Fill what?
+You have better things to do than to play all day.	You have better things to do than to play all day.
+What would you like to climb?	What would you like to climb?
+Well.  Go look for it.	Well.  Go look for it.
+This is a very beautiful tree.	This is a very beautiful tree.
+This is just a normal tree, but very pretty.	This is just a normal tree, but very pretty.
+You admire the beauty of the tree.	You admire the beauty of the tree.
+This is a very nice looking rock.	This is a very nice looking rock.
+There is nothing extraordinary about this rock.	There is nothing extraordinary about this rock.
+This is your ordinary rock.	This is your ordinary rock.
+There is no "%w2" here to look at.	There is no "%w2" here to look at.
+You do not have any water.	You do not have any water.
+There is no door here.	There is no door here.
+The goat does not mind getting its feet wet,but will not swim in the water.  You should go back and lead the goat around the water.	The goat does not mind getting its feet wet,but will not swim in the water.  You should go back and lead the goat around the water.
+The goat, not being able to see you, wanders off.	The goat, not being able to see you, wanders off.
+It is a mighty beanstalk that stretches to the sky.	It is a mighty beanstalk that stretches to the sky.

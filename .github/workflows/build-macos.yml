@@ -1,0 +1,191 @@
+name: build-macos
+
+# 國王密令(KQ1) 繁中化 — macOS universal(arm64+x86_64)ScummVM.app + .dmg/.tar.gz。
+#
+# 不能在 Linux 交叉編譯 macOS(Apple SDK EULA + codesign/hdiutil 只在 macOS host),
+# 用 macos-14(Apple Silicon)runner 借幾分鐘 build。細節與踩雷見 BUILD.md §3 與
+# skill re-retro-cht-rulebook → kb mac-app-cross-pack。
+#
+# [HARD] ScummVM configure 不是 autoconf,CXXFLAGS/LDFLAGS 只能當環境變數餵。
+# [HARD] 不用 brew 的 sdl2(2026 起是 sdl2-compat shim,runtime 才 dlopen libSDL3,
+#        dylibbundler 抓不到,玩家端黑畫面)。改自源碼編 pinned 真 SDL2。
+# universal binary 用「每弧各編一次 + lipo -create」,不用單次雙 -arch 塞給 configure
+# (autoconf 風格的版本解析在雙弧下會炸)。
+#
+# 本專案的 --disable-all-engines --enable-engine=agi --enable-engine=sci 裁剪配置只需要 SDL2(zlib/curl 等
+# 為 macOS 系統庫,libvorbis/FLAC/png/freetype 在 mingw 交叉編譯的驗證中證實 SCI 引擎
+# 不需要——見 BUILD.md,故不特地為它們自編/brew,保持依賴面最小)。
+#
+# 首次執行可能需依 runner 環境微調(ScummVM 版本 drift、SDL release tarball 網址等)。
+# 中文資料本身(translation.tsv + 倚天 Big5 字型 + 標題疊圖 .ovl;KQ1 為內容比對替換,無 view/pic 美術 patch)
+# 不在此 workflow 產生,由 tools/package_macos_data.sh 在 build 完成後從版控快照注入。
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*-macos']
+
+env:
+  SDL_VER: "2.30.9"
+  MIN_OS: "11.0"
+  # SCI-only 精簡:關掉所有外部媒體/格式/網路庫。理由:
+  #  1) scummvm-static 對這些庫要 MacPorts 式「靜態 .a」,runner 沒有(libz.a/libbz2.a 是系統庫,brew 無 .a)。
+  #  2) brew 的 .a 是 arm64-only,x86_64 弧(Rosetta)連進去會架構不符。
+  # KQ1 AGI+SCI 只需 SDL2(自編 universal)+ 內建 nuked-opl(AdLib)+ 內建 Big5Font,不需 freetype/vorbis/png…。
+  LEAN_FLAGS: >-
+    --disable-ogg --disable-vorbis --disable-tremor --disable-flac --disable-mad
+    --disable-faad --disable-mpcdec --disable-openmpt --disable-mikmod
+    --disable-fluidsynth --disable-fluidlite --disable-sonivox
+    --disable-theoradec --disable-vpx --disable-mpeg2 --disable-a52
+    --disable-png --disable-jpeg --disable-gif --disable-freetype2 --disable-fribidi
+    --disable-zlib --disable-libcurl --disable-cloud --disable-enet --disable-sdlnet
+    --disable-discord --disable-sparkle --disable-lua
+    --disable-tts --disable-taskbar --disable-system-dialogs --disable-system-printing
+
+jobs:
+  macos-universal:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 下載 SDL2 原始碼(pinned,避免 brew sdl2-compat shim)
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/SDL2.tar.gz" \
+            "https://github.com/libsdl-org/SDL/releases/download/release-${SDL_VER}/SDL2-${SDL_VER}.tar.gz"
+
+      - name: 自編 SDL2 — arm64(native)
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/sdl-build-arm64" && mkdir -p "$RUNNER_TEMP/sdl-build-arm64"
+          tar xf "$RUNNER_TEMP/SDL2.tar.gz" -C "$RUNNER_TEMP/sdl-build-arm64" --strip-components=1
+          cd "$RUNNER_TEMP/sdl-build-arm64"
+          export CFLAGS="-arch arm64 -mmacosx-version-min=${MIN_OS}"
+          export CXXFLAGS="$CFLAGS" LDFLAGS="$CFLAGS"
+          ./configure --prefix="$RUNNER_TEMP/sdl-arm64" --without-x
+          make -j"$(sysctl -n hw.ncpu)"
+          make install
+          # 防呆:確認不是 sdl2-compat shim(真 SDL2 ~2MB,shim ~0.5MB;otool 查不到 SDL3)
+          SIZE=$(stat -f%z "$RUNNER_TEMP/sdl-arm64/lib/libSDL2-2.0.0.dylib")
+          echo "arm64 libSDL2 size=$SIZE bytes"
+          [ "$SIZE" -gt 1000000 ] || { echo "### 疑似 shim,體積過小 ###"; exit 1; }
+          otool -L "$RUNNER_TEMP/sdl-arm64/lib/libSDL2-2.0.0.dylib" | grep -qi SDL3 && { echo "### 混入 SDL3 依賴 ###"; exit 1; } || true
+
+      - name: 自編 SDL2 — x86_64(arch -x86_64 走 Rosetta,configure 內部 run-test 需要)
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/sdl-build-x86_64" && mkdir -p "$RUNNER_TEMP/sdl-build-x86_64"
+          tar xf "$RUNNER_TEMP/SDL2.tar.gz" -C "$RUNNER_TEMP/sdl-build-x86_64" --strip-components=1
+          cd "$RUNNER_TEMP/sdl-build-x86_64"
+          arch -x86_64 /bin/bash -c "
+            set -euo pipefail
+            export CFLAGS='-arch x86_64 -mmacosx-version-min=${MIN_OS}'
+            export CXXFLAGS=\"\$CFLAGS\" LDFLAGS=\"\$CFLAGS\"
+            ./configure --prefix='$RUNNER_TEMP/sdl-x86_64' --without-x
+            make -j\"\$(sysctl -n hw.ncpu)\"
+            make install
+          "
+          SIZE=$(stat -f%z "$RUNNER_TEMP/sdl-x86_64/lib/libSDL2-2.0.0.dylib")
+          echo "x86_64 libSDL2 size=$SIZE bytes"
+          [ "$SIZE" -gt 1000000 ] || { echo "### 疑似 shim,體積過小 ###"; exit 1; }
+          otool -L "$RUNNER_TEMP/sdl-x86_64/lib/libSDL2-2.0.0.dylib" | grep -qi SDL3 && { echo "### 混入 SDL3 依賴 ###"; exit 1; } || true
+
+      - name: 取得並 patch ScummVM(兩份獨立 checkout,各自 build 一個弧,避免共用 build 目錄互相污染)
+        run: |
+          bash tools/apply_patches.sh "$RUNNER_TEMP/scummvm-arm64"
+          rm -rf "$RUNNER_TEMP/scummvm-x86_64"
+          cp -a "$RUNNER_TEMP/scummvm-arm64" "$RUNNER_TEMP/scummvm-x86_64"
+
+      - name: configure + make scummvm-static — arm64(native)
+        working-directory: ${{ runner.temp }}/scummvm-arm64
+        run: |
+          set -euo pipefail
+          export CXXFLAGS="-arch arm64 -mmacosx-version-min=${MIN_OS}"
+          export LDFLAGS="$CXXFLAGS"
+          ./configure --disable-all-engines --enable-engine=agi --enable-engine=sci --disable-detection-full \
+            --enable-release $LEAN_FLAGS --with-sdl-prefix="$RUNNER_TEMP/sdl-arm64"
+          grep -q "^ENABLE_SCI" config.mk && grep -q "^ENABLE_AGI" config.mk || { echo "### agi/sci engine 未編入(arm64) ###"; exit 12; }
+          grep -q "^SDL_BACKEND = 1" config.mk || { echo "### SDL 未偵測到(arm64) ###"; exit 13; }
+          make -j"$(sysctl -n hw.ncpu)" scummvm-static
+
+      - name: configure + make scummvm-static — x86_64(arch -x86_64 走 Rosetta)
+        working-directory: ${{ runner.temp }}/scummvm-x86_64
+        run: |
+          set -euo pipefail
+          arch -x86_64 /bin/bash -c "
+            set -euo pipefail
+            export CXXFLAGS='-arch x86_64 -mmacosx-version-min=${MIN_OS}'
+            export LDFLAGS=\"\$CXXFLAGS\"
+            ./configure --disable-all-engines --enable-engine=agi --enable-engine=sci --disable-detection-full \
+              --enable-release $LEAN_FLAGS --with-sdl-prefix='$RUNNER_TEMP/sdl-x86_64'
+            grep -q '^ENABLE_SCI' config.mk || { echo '### sci engine 未編入(x86_64) ###'; exit 12; }
+            grep -q '^SDL_BACKEND = 1' config.mk || { echo '### SDL 未偵測到(x86_64) ###'; exit 13; }
+            make -j\"\$(sysctl -n hw.ncpu)\" scummvm-static
+          "
+
+      - name: lipo 合併 universal scummvm-static,make bundle 組 ScummVM.app
+        working-directory: ${{ runner.temp }}/scummvm-arm64
+        run: |
+          set -euo pipefail
+          lipo -create \
+            "${{ runner.temp }}/scummvm-arm64/scummvm-static" \
+            "${{ runner.temp }}/scummvm-x86_64/scummvm-static" \
+            -output scummvm-static-universal
+          lipo -info scummvm-static-universal | grep -q "arm64"
+          lipo -info scummvm-static-universal | grep -q "x86_64"
+          # make bundle 依賴 scummvm-static(已是最新,不會重編)+ plugins + bundle-pack;
+          # bundle-pack 會把 srcdir/gui/themes/*.zip 等 DIST_FILES_THEMES 一併塞進 Resources。
+          make bundle
+          # bundle-pack 塞進去的是 arm64-only 的 scummvm-static,換成 universal 版本
+          cp scummvm-static-universal ScummVM.app/Contents/MacOS/scummvm
+          chmod 755 ScummVM.app/Contents/MacOS/scummvm
+
+      - name: lipo 合併 universal SDL2 dylib,修正兩弧 install_name,重新 ad-hoc 簽章
+        working-directory: ${{ runner.temp }}/scummvm-arm64
+        run: |
+          set -euo pipefail
+          APP=ScummVM.app
+          BIN="$APP/Contents/MacOS/scummvm"
+          mkdir -p "$APP/Contents/Frameworks"
+          FW="$APP/Contents/Frameworks/libSDL2-2.0.0.dylib"
+          lipo -create \
+            "$RUNNER_TEMP/sdl-arm64/lib/libSDL2-2.0.0.dylib" \
+            "$RUNNER_TEMP/sdl-x86_64/lib/libSDL2-2.0.0.dylib" \
+            -output "$FW"
+          install_name_tool -id "@executable_path/../Frameworks/libSDL2-2.0.0.dylib" "$FW"
+          # 兩弧各自 build 時連到不同 prefix 的 SDL2(@rpath 或絕對路徑皆可能),
+          # 分別 -change 到同一個 Frameworks 相對路徑(對應不到的那條 install_name_tool 靜默失敗,不中止)
+          install_name_tool -change "$RUNNER_TEMP/sdl-arm64/lib/libSDL2-2.0.0.dylib"   "@executable_path/../Frameworks/libSDL2-2.0.0.dylib" "$BIN" || true
+          install_name_tool -change "$RUNNER_TEMP/sdl-x86_64/lib/libSDL2-2.0.0.dylib" "@executable_path/../Frameworks/libSDL2-2.0.0.dylib" "$BIN" || true
+          install_name_tool -change "@rpath/libSDL2-2.0.0.dylib" "@executable_path/../Frameworks/libSDL2-2.0.0.dylib" "$BIN" || true
+          codesign --force --sign - "$FW"
+          codesign --force --deep --sign - "$APP"
+
+          echo "=== 驗證:主程式與 Frameworks 內 SDL2 都要雙弧 ==="
+          lipo -info "$BIN" | grep -q arm64 && lipo -info "$BIN" | grep -q x86_64
+          lipo -info "$FW"  | grep -q arm64 && lipo -info "$FW"  | grep -q x86_64
+          echo "=== 驗證:無殘留 build 期絕對路徑 ==="
+          if otool -L "$BIN" | grep -E "$RUNNER_TEMP|/Users/runner"; then
+            echo "### 仍有外部/build 期依賴殘留 ###"; exit 1
+          fi
+          echo "OK"
+
+      - name: 打包 .tar.gz(保 perm,繞 APFS)+ .dmg(方便雙擊)
+        working-directory: ${{ runner.temp }}/scummvm-arm64
+        run: |
+          set -euo pipefail
+          OUT="$GITHUB_WORKSPACE/dist-macos"
+          mkdir -p "$OUT"
+          tar czf "$OUT/KQ1-CHT-engine-macos-universal.tar.gz" ScummVM.app
+          hdiutil create -volname "KQ1-CHT" -srcfolder ScummVM.app -ov -format UDZO \
+            "$OUT/KQ1-CHT-engine-macos-universal.dmg"
+          ls -la "$OUT"
+
+      - name: 注入中文資料（AGI/SCI 兩軌共用同一份 dist-cht/）
+        run: |
+          bash tools/package_macos_data.sh dist-macos/KQ1-CHT-engine-macos-universal.tar.gz dist-macos/out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kq1-cht-macos-universal
+          path: |
+            dist-macos/out/*
