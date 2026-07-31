@@ -1,0 +1,12 @@
+# 推廣片合成環境（ffmpeg + ImageMagick），也用來抽影格做驗證。
+#
+# 這份是事後從既有 image 的 docker history 還原出來的：原本只建了 image 卻沒留
+# Dockerfile，換一台機器就重現不出來。
+#
+# ImageMagick 6 的 policy.xml 預設封鎖 @ 開頭的 pattern（讀檔清單語法），
+# 而 convert 的多圖合成會用到，所以放寬成 read。
+FROM debian:bookworm
+RUN apt-get update -qq && apt-get install -y -qq \
+    ffmpeg imagemagick fonts-arphic-uming fonts-noto-cjk fontconfig \
+    && rm -rf /var/lib/apt/lists/*
+RUN sed -i 's/rights="none" pattern="@\*"/rights="read" pattern="@*"/' /etc/ImageMagick-6/policy.xml || true

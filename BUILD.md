@@ -12,10 +12,13 @@ cd scummvm-src
 git checkout "$(cat ../patches/UPSTREAM_COMMIT.txt)"
 patch -p1 < ../patches/0001-sci-cht-kq1.patch     # SCI 軌（1990 重製版）
 patch -p1 < ../patches/0002-agi-cht-kq1.patch     # AGI 軌（1984/1987 原版）
+patch -p1 < ../patches/0003-gui-cht-kq1.patch     # ScummVM 啟動器清單的中文遊戲名
 cp ../patches/fontchinese.h ../patches/fontchinese.cpp engines/sci/graphics/
+cp ../patches/chtfont.h ../patches/chtfont.cpp gui/
 ```
 
-`fontchinese.{h,cpp}` 是新增檔案，patch 裡沒有，要整檔複製。
+`fontchinese.{h,cpp}`（SCI 遊戲內繪字）與 `chtfont.{h,cpp}`（GUI 字型）是新增檔案，
+patch 裡沒有，要整檔複製。三份 patch 都套完可以用 `tools/apply_patches.sh` 代勞。
 
 ## 2. 建 docker 映像
 
@@ -23,6 +26,7 @@ cp ../patches/fontchinese.h ../patches/fontchinese.cpp engines/sci/graphics/
 docker build -t kq1-build  -f docker/Dockerfile.build  docker/    # Linux
 docker build -t kq1-mingw  -f docker/Dockerfile.mingw  docker/    # Windows 交叉編譯
 docker build -t kq1-capture -f docker/Dockerfile.capture docker/  # headless 截圖驗證
+docker build -t kq1-promo  -f docker/Dockerfile.promo  docker/    # 推廣片合成 / 抽影格
 ```
 
 ## 3. 編譯
@@ -45,8 +49,13 @@ bash tools/build_translation.sh
 ```
 
 會做四件事：逐批驗證並合併譯文（key byte-identical、控制序列數量、Big5 可編碼）→
-套譯名收斂表 → 產 Big5 runtime `translation.tsv` → 用倚天點陣字烘 `kq1_big5.fnt`。
+套譯名收斂表 → 產 Big5 runtime `translation.tsv` → 用倚天點陣字烘 `kq1_big5.fnt`
+（遊戲內）與 `kq1_gui.fnt`（ScummVM 啟動器清單，索引是 Unicode 碼位不是 Big5）。
 產物都在 `dist-cht/`。
+
+不烘 24×24 hi-res 字型：那條路徑需要強制 640×400 upscale，KQ1 的常駐狀態列撐不住
+（連英文都破圖），引擎端已整條移除，見 `scummvm-src/engines/sci/graphics/screen.cpp`
+的 CHT note。
 
 倚天字型原始檔（`STDFONT.15`、`SPCFONT.15` 等）放在 `tools/assets/eten/`，未入庫。
 
@@ -58,6 +67,19 @@ bash tools/package_appimage.sh full     # → dist-all/（含遊戲與 MT-32 ROM
 bash tools/package_windows.sh patch
 bash tools/package_windows.sh full
 ```
+
+macOS 只能在 macOS host build，走 GitHub Actions（`.github/workflows/build-macos.yml`）：
+
+```bash
+git ls-remote origin main                # 先確認 remote HEAD 已是要編的 commit
+gh workflow run build-macos.yml --ref main
+gh run watch <run-id> --exit-status      # 指令尾別接 echo/pipe，exit code 會被蓋掉
+gh run download <run-id> -D /tmp/ci-mac  # 產出的是 patch 版
+bash tools/package_macos_full.sh /tmp/ci-mac/*/KQ1-CHT-patch-macos-universal.tar.gz
+```
+
+full 版一律「下載 CI 的 patch artifact → 本機注入 game/ 與 ROM」，因為 CI runner
+拿不到那些檔案（都 gitignore）。
 
 **驗收**：patch 版解開後不得出現 `RESOURCE.*`、`VOL.*`、`*.DRV`、`SCIV.EXE`、`OBJECT`、
 `WORDS.TOK`、`LOGDIR`、`PICDIR`——出現任何一個就是把遊戲資源打進去了，不能發布。
