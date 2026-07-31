@@ -3,7 +3,7 @@ export HOME=/tmp XDG_RUNTIME_DIR=/tmp DISPLAY=:99
 Xvfb :99 -screen 0 640x480x24 >/tmp/xvfb.log 2>&1 &
 sleep 2
 cd /src
-PREFIX="${PREFIX:-kq4}"
+PREFIX="${PREFIX:-kq1}"
 EXTRA="${EXTRA:-}"
 timeout 45 ./scummvm --path=/game --auto-detect $EXTRA 2>/tmp/sv.log &
 SV=$!

@@ -79,7 +79,7 @@ PY
 
 # 3) Big5 runtime tsv（build_cht.py 順手烘的 TTF 字型不用，下一步會被倚天版覆蓋）
 python3 tools/build_cht.py "$UTF8" dist-cht --size 15 >/dev/null
-rm -f dist-cht/qfg1_big5.fnt
+rm -f dist-cht/kq1_ttf_big5.fnt
 
 # 4) 倚天點陣字（1990s DOS 中文原貌，勝過 TTF rasterize）
 python3 tools/build_eten_font.py "$UTF8" dist-cht --prefix kq1

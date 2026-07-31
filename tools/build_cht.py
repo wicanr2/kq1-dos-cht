@@ -5,7 +5,7 @@
 輸出:
   - runtime translation.tsv(英文 <TAB> Big5 bytes):ScummVM SCI 引擎讀取,做內容比對替換。
     TAB/LF 不出現在 Big5,故可安全當分隔。
-  - qfg1_big5.fnt:Big5 點陣字型,格式對齊 ScummVM Graphics::Big5Font::loadPrefixedRaw:
+  - kq1_ttf_big5.fnt:Big5 點陣字型（TTF 版中間產物）,格式對齊 ScummVM Graphics::Big5Font::loadPrefixedRaw:
     每字 = big-endian Big5 碼(高位元已設)+ height 列 × 2 bytes(16px 寬 1bpp,MSB 在左)。
 
 用法:build_cht.py <in_utf8_tsv> <out_dir> [--size N] [--font PATH] [--face IDX]
@@ -170,7 +170,7 @@ def main():
         glyphs.append((code, bytes(rows_bytes)))
         baked += 1
 
-    fnt = a.outdir + "/qfg1_big5.fnt"
+    fnt = a.outdir + "/kq1_ttf_big5.fnt"   # 只是中間產物，build_translation.sh 產完就刪、實際字型走 build_eten_font.py
     with open(fnt, "wb") as out:
         for code, bmp in glyphs:
             out.write(struct.pack(">H", code))

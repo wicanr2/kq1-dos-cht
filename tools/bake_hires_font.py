@@ -2,7 +2,7 @@
 """
 烘 hi-res Big5 點陣字模(32px 寬 × H 列),供 640x400 upscale 時 GfxFontChinese 直接繪製。
 
-格式(與 qfg1_big5.fnt 同族,只是寬 32):
+格式(與 kq1_big5.fnt 同族,只是寬 32):
   每字 = big-endian Big5 碼(>H) + H 列 × 4 bytes(32px 寬 1bpp,MSB 在左),最後 0xFFFF 終結。
 
 用法:bake_hires_font.py <out.fnt> <tsv1> [tsv2 ...] [--size N] [--height H] [--width W] [--font PATH] [--face IDX]

@@ -6,7 +6,7 @@ cd /src
 timeout 90 ./scummvm --path=/game --auto-detect --language=tw 2>/tmp/sv.log &
 SV=$!
 sleep 11
-xdotool type --delay 100 "BOBALU"; sleep 1; xdotool key Return   # 過防拷
+# KQ1 無防拷（script/text dump 找不到問答字串，見 WORKLIST）→ 不需送通關碼
 sleep 2
 # 過標題/credits：狂送 Return + Esc 推進 intro，沿路截圖
 for t in 01 02 03 04 05 06 07 08 09 10 11 12 13 14; do

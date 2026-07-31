@@ -8,7 +8,7 @@ SCI_LOG_GFX=1 SCI_DUMP_PIC=/out/picdump SCI_DUMP_VIEW=/out/picdump \
   timeout 45 ./scummvm --path=/game --auto-detect --language=tw 2>/tmp/gfx.log &
 SV=$!
 sleep 12
-xdotool type --delay 100 "BOBALU"; sleep 1; xdotool key Return   # 過防拷
+# KQ1 無防拷（script/text dump 找不到問答字串，見 WORKLIST）→ 不需送通關碼
 sleep 3
 import -window root /out/shots/idt_a.png 2>/dev/null || true   # 標題
 xdotool key Return; sleep 3

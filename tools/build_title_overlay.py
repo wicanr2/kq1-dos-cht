@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""烘 KQ4 中文標題副標疊圖 kq4_title.ovl（引擎 drawPicture pic96 時 blit 到 640x400 display）。
-渲染「羅塞拉的冒險」金色點陣（配合 King's Quest logo 金色調）→ 量化到 EGA 16 色調色盤 →
-輸出 .ovl：u16LE width,height,x,y（display 640x400 座標）+ width*height bytes EGA index(0-15)，
+"""烘 KQ1 SCI 版中文標題疊圖 kq1_title.ovl（引擎 drawPicture pic 777 時 blit 到 visual plane）。
+渲染「國王密令」金色點陣（配合 King's Quest logo 金色調）→ 量化到 EGA 16 色調色盤 →
+輸出 .ovl：u16LE width,height,x,y（邏輯 320x200 座標）+ width*height bytes EGA index(0-15)，
 0xFF=透明。純輸出，字型用 Pillow。
 
-用法：build_title_overlay.py <out.ovl> [--text 羅塞拉的冒險] [--font PATH] [--face IDX]
+AGI 版的疊圖格式不同（magic CHTO、BE 座標、hi-res 640x400 直寫 display），
+由 build_title_overlay_agi.py 產生 kq1_title_agi.ovl，兩支不可互換。
+
+用法：build_title_overlay.py <out.ovl> [--text 國王密令] [--font PATH] [--face IDX]
 """
 import sys, struct, argparse
 from PIL import Image, ImageFont, ImageDraw
@@ -24,13 +27,13 @@ def nearest_ega(r,g,b):
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("out")
-    ap.add_argument("--text",default="羅塞拉的冒險")
+    ap.add_argument("--text",default="國王密令")
     ap.add_argument("--font",default="/usr/share/fonts/truetype/arphic/uming.ttc")
     ap.add_argument("--face",type=int,default=2)
     ap.add_argument("--size",type=int,default=19)     # 邏輯 320x200 尺度（引擎寫 visual plane 後 2x upscale）
     ap.add_argument("--disp-w",type=int,default=320)
     ap.add_argument("--disp-h",type=int,default=200)
-    ap.add_argument("--y",type=int,default=150)   # 底部（IV 盾下方）
+    ap.add_argument("--y",type=int,default=0)     # KQ1 疊在畫面最上方（實際產出 w=320 h=16 x=0 y=0）
     a=ap.parse_args()
 
     font=ImageFont.truetype(a.font,a.size,index=a.face)
