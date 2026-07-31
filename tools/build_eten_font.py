@@ -4,16 +4,17 @@
 為什麼不用 TTF:1990s DOS 中文的原貌就是倚天;TTF 縮到 15–24px 筆劃比例不對、
 複雜字糊成一團。倚天是為該尺寸手工調的點陣字。
 
-輸出兩份(格式皆為 ScummVM Graphics::Big5Font::loadPrefixedRaw 的 prefixed raw:
+輸出一份(格式為 ScummVM Graphics::Big5Font::loadPrefixedRaw 的 prefixed raw:
 每字 = big-endian Big5 碼 + H 列 × ceil(W/8) bytes,MSB 在左;檔尾 0xFFFF):
-  <out>/kq1_big5.fnt     16×15,低解析路徑(hi-res 缺字時的後備)
-  <out>/kq1_big5_hi.fnt  24×24,hi-res 路徑(640×400 display 直繪)
+  <out>/kq1_big5.fnt     16×15,AGI 全部 + SCI 全部
+
+KQ1 不烘 24×24:那份是給「強制 640×400 upscale + hi-res 直繪」用的,而 KQ1 的常駐
+狀態列撐不住強制 upscale(連英文都破圖,見 scummvm-src screen.cpp 的 CHT note),
+整條 hi-res 路徑已從引擎移除。要重新評估時,24×24 的來源檔仍在 assets/eten/。
 
 來源檔(tools/assets/eten/):
   STDFONT.15   16×15 漢字 13094 字,30 B/字   裸格式
   SPCFONT.15   16×15 全形標點 408 字,30 B/字  裸格式
-  stdfont.24   24×24 漢字 13094 字,72 B/字   由 STD.24M 經 etunpack.py 解壓
-  SPCFONT.24   24×24 全形標點 408 字,72 B/字  裸格式
 
 Big5 索引是「分區」不是線性,見 kb eten-bitmap-font。
 """
@@ -152,18 +153,16 @@ def main():
     a = ap.parse_args()
 
     lo = EtenFont(os.path.join(ETEN, "STDFONT.15"), os.path.join(ETEN, "SPCFONT.15"), 16, 15)
-    hi = EtenFont(os.path.join(ETEN, "stdfont.24"), os.path.join(ETEN, "SPCFONT.24"), 24, 24)
 
     # 驗收 oracle(kb eten-bitmap-font):idx=0 必須是「一」,「中」「猴」須可辨識
-    for f, name in ((lo, "16×15"), (hi, "24×24")):
-        art = f.to_ascii(0xA4, 0x40)          # 「一」= Big5 A440 = std idx 0
-        rows_with_ink = [r for r in art.split("\n") if "#" in r]
-        assert 1 <= len(rows_with_ink) <= 3, f"{name} oracle 失敗:「一」不是單橫線\n{art}"
-        for hib, lob, chn in ((0xA4, 0xA4, "中"), (0xB5, 0x55, "猴")):
-            assert f.glyph(hib, lob) is not None, f"{name} oracle 失敗:「{chn}」無字模"
+    art = lo.to_ascii(0xA4, 0x40)             # 「一」= Big5 A440 = std idx 0
+    rows_with_ink = [r for r in art.split("\n") if "#" in r]
+    assert 1 <= len(rows_with_ink) <= 3, f"16×15 oracle 失敗:「一」不是單橫線\n{art}"
+    for hib, lob, chn in ((0xA4, 0xA4, "中"), (0xB5, 0x55, "猴")):
+        assert lo.glyph(hib, lob) is not None, f"16×15 oracle 失敗:「{chn}」無字模"
     print("oracle OK:「一」為單橫線,「中」「猴」有字模")
     if a.selftest:
-        print(hi.to_ascii(0xA4, 0xA4))
+        print(lo.to_ascii(0xA4, 0xA4))
         return
 
     sys.path.insert(0, HERE)
@@ -197,7 +196,6 @@ def main():
 
     os.makedirs(a.outdir, exist_ok=True)
     bake(chars, lo, f"{a.outdir}/{a.prefix}_big5.fnt", 16, 15, a.ttf, a.ttf_face, "低解析")
-    bake(chars, hi, f"{a.outdir}/{a.prefix}_big5_hi.fnt", 24, 24, a.ttf, a.ttf_face, "hi-res")
 
 if __name__ == "__main__":
     main()

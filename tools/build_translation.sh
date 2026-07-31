@@ -3,9 +3,10 @@
 #
 # 產物（兩軌共用同一份，AGI 與 SCI 都從這裡載）:
 #   dist-cht/translation.tsv   Big5 runtime 查表（引擎讀這份，不是 UTF-8 那份）
-#   dist-cht/kq1_big5.fnt      倚天 16×15（AGI 全部 + SCI 選單路徑）
-#   dist-cht/kq1_big5_hi.fnt   倚天 24×24（SCI hi-res 對白路徑，須對齊 fontchinese.cpp
-#                              的 kHiW=24 / kHiH=24）
+#   dist-cht/kq1_big5.fnt      倚天 16×15（AGI 與 SCI 兩軌全部文字都走這一份）
+#
+# 不產 24×24 hi-res 字型：那條路徑需要強制 640×400 upscale，而 KQ1 的常駐狀態列
+# 撐不住（連英文都破圖），引擎端已移除，見 scummvm-src/engines/sci/graphics/screen.cpp。
 set -e
 cd "$(dirname "$0")/.."
 
@@ -77,9 +78,8 @@ if conv:
     print(f"譯名收斂：{len(conv)} 條規則，改動 {n} 行")
 PY
 
-# 3) Big5 runtime tsv（build_cht.py 順手烘的 TTF 字型不用，下一步會被倚天版覆蓋）
-python3 tools/build_cht.py "$UTF8" dist-cht --size 15 >/dev/null
-rm -f dist-cht/kq1_ttf_big5.fnt
+# 3) Big5 runtime tsv（--no-font：字型走下一步的倚天點陣字，這裡只要查表）
+python3 tools/build_cht.py "$UTF8" dist-cht --size 15 --no-font >/dev/null
 
 # 4) 倚天點陣字（1990s DOS 中文原貌，勝過 TTF rasterize）
 python3 tools/build_eten_font.py "$UTF8" dist-cht --prefix kq1

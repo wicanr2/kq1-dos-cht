@@ -56,24 +56,14 @@ public:
 	void draw(uint16 chr, int16 top, int16 left, byte color, bool greyedOutput) override;
 
 private:
-	// Hi-res Big5 draw for ZH_TWN 640x400 upscale: draws a 32xN glyph straight onto the
-	// display buffer so strokes stay sharp instead of blocky 2x-nearest. See drawHiRes().
-	bool loadHiResFont();
+	// 1:1 draw into the display buffer, for the fixed-height status bar on an upscaled display.
 	bool drawCompact(uint16 point, int16 top, int16 left, byte color);
-	void drawHiRes(uint16 point, int16 top, int16 left, byte color);
-	bool useHiRes() const;
 
 	GfxScreen *_screen;
 	GuiResourceId _resourceId;
 	GfxFontFromResource *_asciiFont; // original SCI font, for single-byte glyphs
 	Graphics::Big5Font *_big5;       // shared Traditional Chinese bitmap font (low-res 16px)
 	int _big5Height;
-
-	// Hi-res font (own format, not Graphics::Big5Font which is fixed 16px): each glyph is
-	// _hiH rows x (_hiW/8) bytes, keyed by big-endian Big5 code -> offset into _hiData.
-	Common::HashMap<uint16, uint32> _hiIndex;
-	Common::Array<byte> _hiData;
-	int _hiW, _hiH;
 };
 
 } // End of namespace Sci

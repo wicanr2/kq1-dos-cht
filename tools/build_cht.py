@@ -12,7 +12,6 @@
 純輸出;字型渲染用 Pillow。
 """
 import sys, struct, argparse
-from PIL import Image, ImageFont, ImageDraw
 
 WIDTH = 16  # Big5Font 固定字寬 kChineseTraditionalWidth
 
@@ -74,6 +73,8 @@ def main():
     ap.add_argument("--face", type=int, default=2)
     ap.add_argument("--corrections", default="translation/corrections.tsv",
                     help="錯誤中文\\t正確中文,子字串替換(可無)")
+    ap.add_argument("--no-font", action="store_true",
+                    help="只產 runtime tsv,不烘 TTF 字型(KQ1 走倚天點陣字,見 build_eten_font.py)")
     a = ap.parse_args()
     H = a.size
 
@@ -134,6 +135,12 @@ def main():
             out.write(b"\n")
 
     # 2) 烘 Big5 字型(只含用到的字)
+    # KQ1 不走這條:字型一律用倚天點陣字(build_eten_font.py),TTF 縮到 15px 筆劃比例不對。
+    # 留著是為了換遊戲時手上沒有倚天字的情況,所以 PIL 延遲匯入 —— --no-font 時完全不需要它。
+    if a.no_font:
+        print(f"譯文 {len(rows)} 則 → {runtime}(--no-font,未烘 TTF 字型)")
+        return
+    from PIL import Image, ImageFont, ImageDraw
     font = ImageFont.truetype(a.font, H, index=a.face)
     glyphs = []  # (big5code, bytes)
     baked = 0
