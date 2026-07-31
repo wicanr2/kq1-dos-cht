@@ -39,7 +39,7 @@
 - [x] batch_01 試作核准（格式驗證 KEY-OK，選單 padding 保留）
 - [x] batch_02–16 fan-out（sonnet subagent），SCI 軌覆蓋 99%
 - [x] 合併 master + 逐批驗證（key/控制序列/Big5）+ 譯名收斂表 `translation/converge.tsv`
-- [x] 烘倚天字型 → `dist-cht/`（16×15，1960 字；hi-res 24×24 已停用，見下方決策）
+- [x] 烘倚天字型 → `dist-cht/`（16×15，1960 字；hi-res 24×24 已移除，見下方決策）
 - [x] 中文標題疊圖（`kq1_title.ovl`，標題 pic = **777**，已實機驗證）
 - [x] playtest：標題、標題選單、場景、parser 對白、開場旁白、狀態列、道具欄（Ctrl+I，
       「你身上什麼也沒帶！」）、F8 雙向切換都實機驗過
@@ -86,8 +86,11 @@
 - **SCI 軌放棄 hi-res 24×24，改用原生 16×15 倚天字**（2026-07-30，使用者決定）。
   原因：ZH_TWN 強制 640×400 upscale 會讓 KQ1 的常駐狀態列破圖（左半黑底、文字被裁），
   且**餵英文字串一樣壞**，證明是「強制 upscale × KQ1 狀態列繪製」不相容，與中文無關。
-  改走低解析後狀態列恢復正常，畫面風格也與 AGI 軌一致。`screen.cpp` 的強制 upscale 已移除，
-  `fontchinese.cpp` 的 hi-res 路徑保留但不會被觸發（`getDisplayWidth() == getWidth()`）。
+  改走低解析後狀態列恢復正常，畫面風格也與 AGI 軌一致。`screen.cpp` 的強制 upscale 已移除。
+  `fontchinese.cpp` 的 hi-res 路徑起初保留但恆不觸發（`getDisplayWidth() == getWidth()`，
+  upscale 只在 Macintosh 分支設定），**2026-07-31 連同 `kq1_big5_hi.fnt`、`bake_hires_font.py`
+  一併移除**——死碼會讓後續判斷失準，而且那顆 24×24 字型仍跟著每個平台的包出貨、
+  build 流程又不重烘它，改譯文後會靜默過期。
 
 ## 已知限制（不再追）
 
@@ -106,11 +109,10 @@
   display buffer 被寫成黑色而 visual 是對的。
   下一步：dump 狀態列繪製前後的 visual/display buffer 比對，找出是誰把那塊 display 寫黑
   （懷疑 `putFontPixel` 的 `_upscaledHeightMapping` 分支或狀態列底色的 fillRect 只寫了 visual）。
-  兩個 probe 開關已留在程式碼裡（`KQ1_PROBE_NO_UPSCALE` / `KQ1_PROBE_ASCII_HEIGHT`），
-  正式出包前要拿掉。**狀態列譯文暫時保持英文**，其餘畫面全中文。
+  兩個 probe 開關（`KQ1_PROBE_NO_UPSCALE` / `KQ1_PROBE_ASCII_HEIGHT`）已於出包前清掉，
+  2026-07-31 複查引擎碼確認無殘留。**狀態列譯文維持英文**，其餘畫面全中文。
 
 ## 已知待辦雷
 
-- `paint16.cpp` 的標題 overlay gate 仍是 KQ4 的 `pictureId == 96` → 換成 KQ1 實測值。
-- 字型三旋鈕目前設定：低解析 advance 16／hi-res advance 12／glyph 24×24（倚天明體）。
-  實機截圖後再與使用者確認密度。
+- 字型設定：低解析 advance 16／glyph 16×15（倚天）。狀態列另有 compact advance 8，
+  但 SCI 狀態列目前未中文化，那條路徑等狀態列真的要上中文時再驗。
