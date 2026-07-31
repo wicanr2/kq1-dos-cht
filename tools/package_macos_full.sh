@@ -152,7 +152,10 @@ tar czf "$OUT" -C "$WRAP" "ScummVM.app" "修復-macOS.command"
 ls -lh "$OUT"
 
 echo ">> 驗收：full 包必須含遊戲資源（與 patch 包相反）"
-if tar tzf "$OUT" | grep -qE "RESOURCE\.MAP" && tar tzf "$OUT" | grep -qE "LOGDIR"; then
+# [雷] 先把清單收進變數再比對，別 `tar tzf ... | grep -q`：grep -q 一命中就關掉管線，
+# tar 吃到 SIGPIPE 回非 0，在 set -o pipefail 下整條判成失敗 —— 包是好的卻報「缺資源」。
+LIST="$(tar tzf "$OUT")"
+if printf '%s\n' "$LIST" | grep -q "RESOURCE\.MAP" && printf '%s\n' "$LIST" | grep -q "LOGDIR"; then
   echo ">> OK：AGI 與 SCI 兩版資源都在包內"
 else
   echo "### full 包缺遊戲資源 ###"; exit 1
