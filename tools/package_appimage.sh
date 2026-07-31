@@ -55,6 +55,11 @@ echo "   $(ls "$APPDIR/usr/lib" | wc -l) 個 .so"
 echo ">> [$MODE] 放入中文資料(translation.tsv + Big5 字型 + 標題疊圖)"
 cp -r "$ROOT/dist-cht/." "$APPDIR/usr/share/cht/"
 
+# GUI theme：AppImage 不帶 theme 就會退回內建的陽春樣式,而內建那條路徑不經過
+# ThemeEngine::loadFont —— 中文遊戲名就算有字型也畫不出來(會是一排方塊)。
+# 只有 95K,順手補齊 GUI 外觀。
+cp "$ROOT/scummvm-src/gui/themes/scummremastered.zip" "$APPDIR/usr/share/cht/"
+
 # MT-32 ROM(僅 full 版才附;有 ROM 才讓 AppRun 把 music_driver 設成 mt32)
 if [ "$MODE" = "full" ]; then
   stage_mt32_rom "$APPDIR/usr/share/cht" || true
@@ -108,6 +113,7 @@ cat > "$CFG" <<EOF
 # GUI 的中文字型(kq1_gui.fnt)在遊戲啟動前就要載入,而 game section 的 extrapath 那時
 # 還沒生效 —— 少了這行,啟動器清單裡的中文遊戲名會變成一排方塊。
 extrapath=$EXTRA
+themepath=$EXTRA
 
 [kq1agi]
 description=國王密令 I（1984 AGI 原版）

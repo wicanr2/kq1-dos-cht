@@ -51,6 +51,10 @@ docker run --rm --name kq1-winpkg-pthreaddll "$MINGW_IMG" cat /usr/x86_64-w64-mi
 echo ">> [$MODE] 放入中文資料(translation.tsv + Big5 字型 + 標題疊圖)"
 cp -r "$ROOT/dist-cht/." "$STAGE/extra/"
 
+# GUI theme：不帶 theme 會退回內建的陽春樣式,而內建那條路徑不經過 ThemeEngine::loadFont
+# —— 中文遊戲名就算有字型也畫不出來(會是一排方塊)。只有 95K。
+cp "$ROOT/scummvm-src/gui/themes/scummremastered.zip" "$STAGE/extra/"
+
 if [ "$MODE" = "full" ]; then
   stage_mt32_rom "$STAGE/extra" || true
   echo ">> [full] 放入整個 game/(AGI 1984 + SCI 1990 兩版)"
@@ -70,6 +74,7 @@ if exist scummvm.ini goto :launch
 rem GUI 的中文字型(kq1_gui.fnt)在遊戲啟動前就要載入,game section 的 extrapath 那時
 rem 還沒生效 —— 少了這行,啟動器清單裡的中文遊戲名會變成一排方塊。
 >>scummvm.ini echo extrapath=%~dp0extra
+>>scummvm.ini echo themepath=%~dp0extra
 >>scummvm.ini echo.
 >>scummvm.ini echo [kq1agi]
 >>scummvm.ini echo description=國王密令 I（1984 AGI 原版）
