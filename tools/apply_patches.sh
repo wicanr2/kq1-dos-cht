@@ -15,9 +15,12 @@ echo ">> 目標樹：$SRC"
 echo ">> pinned upstream：$PINNED"
 git -C "$SRC" checkout --quiet "$PINNED"
 
-# 1) 新增檔（GfxFontChinese：Big5 繪字 + hi-res loader），patch 裡沒有，整檔複製
+# 1) 新增檔（GfxFontChinese：SCI 遊戲內 Big5 繪字；ChtGuiFont：ScummVM 啟動器的中文字型），
+#    patch 裡沒有，整檔複製
 cp "$HERE/patches/fontchinese.cpp" "$SRC/engines/sci/graphics/fontchinese.cpp"
 cp "$HERE/patches/fontchinese.h"   "$SRC/engines/sci/graphics/fontchinese.h"
+cp "$HERE/patches/chtfont.cpp"     "$SRC/gui/chtfont.cpp"
+cp "$HERE/patches/chtfont.h"       "$SRC/gui/chtfont.h"
 
 # 2) SCI 軌（1990 重製版）：ZH_TWN 啟用、Big5 繪字、kFormat 模板 + %s 參數 hook、
 #    GetLongest 中文斷行（含 SCI0 提早斷行的修正）、DrawStatus 雙位元組、標題疊圖、SCI_DUMP_RES
@@ -26,6 +29,10 @@ patch -p1 -d "$SRC" < "$HERE/patches/0001-sci-cht-kq1.patch"
 # 3) AGI 軌（1984/1987 原版）：字型檔存在即啟用（不可用 --language）、forceHires 640x400、
 #    systemUI／狀態列中文、OBJECT 道具名走 displayText
 patch -p1 -d "$SRC" < "$HERE/patches/0002-agi-cht-kq1.patch"
+
+# 4) GUI 軌：啟動器清單的中文遊戲名（ScummVM 內建 GUI 字型沒有 CJK 字符，
+#    不接這層就是一排方塊）
+patch -p1 -d "$SRC" < "$HERE/patches/0003-gui-cht-kq1.patch"
 
 echo ">> 完成。configure（MT-32 必須編入，不可加 --disable-mt32emu）："
 echo "   ./configure --disable-all-engines --enable-engine=sci,agi --disable-detection-full && make -j\$(nproc)"

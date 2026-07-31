@@ -75,6 +75,9 @@ MT32LINE=""
 
 cat > "$CFG" <<EOF
 [scummvm]
+# GUI 的中文字型（kq1_gui.fnt）在遊戲啟動前就要載入，game section 的 extrapath 那時還
+# 沒生效 —— 少了這行，啟動器清單裡的中文遊戲名會變成一排方塊。
+extrapath=$EXTRA
 
 [kq1agi]
 description=國王密令 I（1984 AGI 原版）

@@ -67,6 +67,9 @@ cd /d "%~dp0"
 if exist scummvm.ini goto :launch
 
 > scummvm.ini echo [scummvm]
+rem GUI 的中文字型(kq1_gui.fnt)在遊戲啟動前就要載入,game section 的 extrapath 那時
+rem 還沒生效 —— 少了這行,啟動器清單裡的中文遊戲名會變成一排方塊。
+>>scummvm.ini echo extrapath=%~dp0extra
 >>scummvm.ini echo.
 >>scummvm.ini echo [kq1agi]
 >>scummvm.ini echo description=國王密令 I（1984 AGI 原版）

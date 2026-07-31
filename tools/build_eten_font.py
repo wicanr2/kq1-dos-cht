@@ -141,6 +141,48 @@ def bake(chars, font, out_path, w, h, ttf_path, ttf_face, label):
           f"{'  非 Big5(遺失):' + ''.join(missing) if missing else ''}")
     return fallback, missing
 
+
+def bake_gui(chars, font, out_path, w, h, ttf_path, ttf_face):
+    """烘 ScummVM GUI 用的中文字型（ChtGuiFont 讀這份）。
+
+    跟遊戲內那份的差別只有索引：GUI 走 Common::U32String，drawChar() 拿到的是
+    Unicode 碼位，不是 Big5 碼，所以這裡把碼位直接寫進檔案，引擎端就不必在
+    runtime 做 Unicode→Big5 轉換（ScummVM 的 iconv 未必編得進來）。
+
+    格式：magic "CHTG" + u16 w + u16 h + u32 count
+          + count × { u32 Unicode 碼位, h × ceil(w/8) bytes 點陣 }，全部 big-endian。
+    """
+    row_bytes = (w + 7) // 8
+    glyphs = []
+    for ch in sorted(chars):
+        if ord(ch) <= 0x7F:          # ASCII 由 GUI 原字型畫，不進表
+            continue
+        try:
+            b5 = ch.encode("big5")
+        except UnicodeEncodeError:
+            continue
+        if len(b5) != 2:
+            continue
+        g = font.glyph(b5[0], b5[1])
+        if g is None:
+            try:
+                g = ttf_glyph(ch, w, h, ttf_path, ttf_face)
+            except Exception:
+                continue
+        glyphs.append((ord(ch), g))
+
+    with open(out_path, "wb") as f:
+        f.write(b"CHTG")
+        f.write(struct.pack(">HHI", w, h, len(glyphs)))
+        for code, bmp in glyphs:
+            f.write(struct.pack(">I", code))
+            f.write(bmp)
+
+    exp = 12 + len(glyphs) * (4 + h * row_bytes)
+    got = os.path.getsize(out_path)
+    assert exp == got, f"GUI 字型大小驗算不符 exp={exp} got={got}"
+    print(f"GUI: {len(glyphs)} 字 ({w}×{h}) → {out_path}  [{got} bytes]")
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("tsv", help="UTF-8 translation.tsv(英文<TAB>中文)")
@@ -196,6 +238,12 @@ def main():
 
     os.makedirs(a.outdir, exist_ok=True)
     bake(chars, lo, f"{a.outdir}/{a.prefix}_big5.fnt", 16, 15, a.ttf, a.ttf_face, "低解析")
+
+    # ScummVM 啟動器清單（GUI）用的字型。GUI 的字型跟遊戲內是兩套：ScummVM 自己的
+    # 點陣字沒有 CJK 字符，遊戲清單裡的中文遊戲名就會變成一排方塊。字集直接沿用遊戲
+    # 譯文用字，再補上打包腳本寫進 scummvm.ini description 的字。
+    GUI_EXTRA = set("國王密令原版重製年")
+    bake_gui(chars | GUI_EXTRA, lo, f"{a.outdir}/{a.prefix}_gui.fnt", 16, 15, a.ttf, a.ttf_face)
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,42 @@
+diff --git a/gui/ThemeEngine.cpp b/gui/ThemeEngine.cpp
+index 118e3ff7..327d017b 100644
+--- a/gui/ThemeEngine.cpp
++++ b/gui/ThemeEngine.cpp
+@@ -41,6 +41,7 @@
+ #include "image/png.h"
+ 
+ #include "gui/widget.h"
++#include "gui/chtfont.h"
+ #include "gui/ThemeEngine.h"
+ #include "gui/ThemeEval.h"
+ #include "gui/ThemeParser.h"
+@@ -1853,6 +1854,17 @@ const Graphics::Font *ThemeEngine::loadFont(const Common::String &filename, cons
+ 			font = Graphics::BdfFont::scaleFont((const Graphics::BdfFont *)font, pointsize);
+ 	}
+ 
++	// CHT: none of the stock GUI fonts carry CJK glyphs, so a game whose name is
++	// written in Chinese lists as a row of empty boxes. When the translation data
++	// is on the search path, wrap the font so anything above U+007F comes from the
++	// ETEN bitmap font instead. Single-byte text keeps rendering through the
++	// original font, and the wrapper reports the original height, so English GUI
++	// text and widget layout are untouched whether or not the file is present.
++	if (font) {
++		if (const Graphics::Font *chtFont = ChtGuiFont::load("kq1_gui.fnt", font))
++			font = chtFont;
++	}
++
+ 	// If the font is successfully loaded store it in the font manager.
+ 	if (font) {
+ 		FontMan.assignFontToName(fontName, font);
+diff --git a/gui/module.mk b/gui/module.mk
+index 04df343d..28038ce1 100644
+--- a/gui/module.mk
++++ b/gui/module.mk
+@@ -28,6 +28,7 @@ MODULE_OBJS := \
+ 	shaderbrowser-dialog.o \
+ 	textviewer.o \
+ 	themebrowser.o \
++	chtfont.o \
+ 	ThemeEngine.o \
+ 	ThemeEval.o \
+ 	ThemeLayout.o \
