@@ -17,6 +17,8 @@
 | ![重製版中文標題](screenshots/sci-title.png) | ![原版中文標題](screenshots/agi-title.png) |
 | 中文標題疊在原版 logo 上方，一個像素都沒動到原始美術 | 連工作人員名單都是中文 |
 
+[![宣傳影片](https://img.youtube.com/vi/MqZ9T2CwFdo/maxresdefault.jpg)](https://youtu.be/MqZ9T2CwFdo)
+
 **[▶ 宣傳影片（54 秒）](https://youtu.be/MqZ9T2CwFdo)** — 兩版的標題、對白、選單、狀態列與
 遊戲清單，左英文原版／右繁體中文並排對照，配樂是遊戲原版的 MT-32 音樂。
 
