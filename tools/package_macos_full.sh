@@ -49,34 +49,50 @@ cp -R "$ROOT/game/." "$GAME_DST/"
 echo ">> MT-32 ROM（完整包專用，本機無 IP 顧慮）"
 stage_mt32_rom "$CHT_DIR" || true
 
-echo ">> 換上 wrapper 當 CFBundleExecutable（直指包內 game，玩家免輸路徑）"
-REAL_BIN="$(ls "$APP/Contents/MacOS" | head -1)"
-[ -n "$REAL_BIN" ] || { echo "!! Contents/MacOS 是空的" >&2; exit 1; }
-if [ "$REAL_BIN" = "kq1-launcher" ]; then
-  echo "!! 來源已經是 full 包（wrapper 已就位），請用原始的 patch 包當來源" >&2; exit 1
-fi
-mv "$APP/Contents/MacOS/$REAL_BIN" "$APP/Contents/MacOS/scummvm-real"
+# [HARD] 不動 .app bundle。
+#
+# 舊版做法是「把原執行檔改名成 scummvm-real、塞一支 bash wrapper 進 Contents/MacOS/、
+# 再改 Info.plist 的 CFBundleExecutable 指過去」。那條路每一環都可能讓玩家看到「雙擊
+# 沒反應」：script 當 bundle 進入點、改過的 Info.plist、以及 codesign --deep 對這種
+# 混合結構的處理，任何一個出問題都不會有錯誤訊息（Finder 啟動時沒有終端機可看）。
+# GitHub issue #1 回報的就是這個症狀。
+#
+# 現在改成跟 Windows 的 .bat 同一套：**.app 保持 CI 產出的原樣**，另外在它旁邊放一支
+# 啟動器 .command，由它寫設定檔並帶 --config 啟動。.app 的結構與簽章完全沒被碰過，
+# 而且雙擊 .command 會開終端機視窗——萬一有錯誤，玩家看得到、也回報得出來。
+echo ">> 產生啟動器（.app 保持原樣，不改 CFBundleExecutable）"
+echo ">> 移除舊簽章（內容已改，舊 _CodeSignature 一定失效）"
+rm -rf "$APP/Contents/_CodeSignature"
 
-cat > "$APP/Contents/MacOS/kq1-launcher" <<'LAUNCH'
+WRAP="$WORK/out"; mkdir -p "$WRAP"
+mv "$APP" "$WRAP/ScummVM.app"
+cat > "$WRAP/PLAY-KQ1-CHT.command" <<'LAUNCH'
 #!/bin/bash
-set -e
-HERE="$(cd "$(dirname "$0")" && pwd)"
-RES="$(cd "$HERE/../Resources" && pwd)"
-BIN="$HERE/scummvm-real"
-EXTRA="$RES/cht-data"
-GAMEROOT="$RES/game"
+# 啟動器：寫一份設定檔到自己旁邊，再用它啟動未經改動的 ScummVM.app。
+# 刻意不寫 ~/Library/Preferences/ScummVM Preferences —— 那是 ScummVM 的全域設定檔，
+# 覆蓋掉玩家原本裝的 ScummVM 設定不禮貌。
+cd "$(dirname "$0")" || exit 1
+HERE="$(pwd)"
+APP="$HERE/ScummVM.app"
+BIN="$APP/Contents/MacOS/scummvm"
+EXTRA="$APP/Contents/Resources/cht-data"
+GAMEROOT="$APP/Contents/Resources/game"
+CFG="$HERE/scummvm.ini"
 
-# .app 內部唯讀，設定檔一律寫使用者家目錄
-CFG="$HOME/Library/Application Support/kq1-cht/scummvm.ini"
-mkdir -p "$(dirname "$CFG")"
+if [ ! -x "$BIN" ]; then
+  echo "找不到 $BIN"
+  echo "請確認整個資料夾都解開了，而且 ScummVM.app 與這支啟動器放在一起。"
+  read -n1 -p "按任意鍵關閉…"
+  exit 1
+fi
 
 MT32LINE=""
 [ -f "$EXTRA/MT32_CONTROL.ROM" ] && MT32LINE="music_driver=mt32"
 
+if [ ! -f "$CFG" ]; then
 cat > "$CFG" <<EOF
 [scummvm]
-# GUI 的中文字型（kq1_gui.fnt）在遊戲啟動前就要載入，game section 的 extrapath 那時還
-# 沒生效 —— 少了這行，啟動器清單裡的中文遊戲名會變成一排方塊。
+gui_language=en
 extrapath=$EXTRA
 
 [kq1agi]
@@ -96,31 +112,25 @@ path=$GAMEROOT/sci_1990/KQ1NEW
 extrapath=$EXTRA
 $MT32LINE
 EOF
-
-exec "$BIN" --config="$CFG"
-LAUNCH
-chmod +x "$APP/Contents/MacOS/kq1-launcher"
-
-PLIST="$APP/Contents/Info.plist"
-if grep -q "<key>CFBundleExecutable</key>" "$PLIST"; then
-  # plist 是 XML：把 CFBundleExecutable 的下一行 <string> 換成 wrapper
-  perl -0pi -e 's|(<key>CFBundleExecutable</key>\s*<string>)[^<]*(</string>)|${1}kq1-launcher${2}|s' "$PLIST"
-  echo ">>    CFBundleExecutable → kq1-launcher"
-else
-  echo "!! Info.plist 沒有 CFBundleExecutable，wrapper 不會生效" >&2; exit 1
 fi
 
-echo ">> 移除舊簽章（內容已改，舊 _CodeSignature 一定失效）"
-rm -rf "$APP/Contents/_CodeSignature"
+"$BIN" --config="$CFG"
+rc=$?
+if [ $rc -ne 0 ]; then
+  echo
+  echo "ScummVM 結束時回報錯誤（代碼 $rc），上面的訊息可能說明了原因。"
+  read -n1 -p "按任意鍵關閉…"
+fi
+LAUNCH
+chmod +x "$WRAP/PLAY-KQ1-CHT.command"
 
-WRAP="$WORK/out"; mkdir -p "$WRAP"
-mv "$APP" "$WRAP/ScummVM.app"
 cat > "$WRAP/修復-macOS.command" <<'FIX'
 #!/bin/bash
 cd "$(dirname "$0")"; echo "處理中…"
 xattr -cr ScummVM.app 2>/dev/null
+xattr -cr PLAY-KQ1-CHT.command 2>/dev/null
 codesign --force --deep --sign - ScummVM.app 2>/dev/null && echo "已重簽。" || echo "（codesign 略過）"
-echo "完成！雙擊 ScummVM.app，在清單裡挑 1984 AGI 原版或 1990 SCI 重製版。"
+echo "完成！接著雙擊 PLAY-KQ1-CHT.command 開始遊戲。"
 read -n1 -p "按任意鍵關閉…"
 FIX
 chmod +x "$WRAP/修復-macOS.command"
@@ -148,7 +158,7 @@ RM
 
 mkdir -p "$DIST"
 echo ">> 打包 → $OUT"
-tar czf "$OUT" -C "$WRAP" "ScummVM.app" "修復-macOS.command"
+tar czf "$OUT" -C "$WRAP" "ScummVM.app" "PLAY-KQ1-CHT.command" "修復-macOS.command"
 ls -lh "$OUT"
 
 echo ">> 驗收：full 包必須含遊戲資源（與 patch 包相反）"
