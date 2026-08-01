@@ -51,9 +51,14 @@ docker run --rm --name kq1-winpkg-pthreaddll "$MINGW_IMG" cat /usr/x86_64-w64-mi
 echo ">> [$MODE] 放入中文資料(translation.tsv + Big5 字型 + 標題疊圖)"
 cp -r "$ROOT/dist-cht/." "$STAGE/extra/"
 
-# GUI theme：不帶 theme 會退回內建的陽春樣式,而內建那條路徑不經過 ThemeEngine::loadFont
-# —— 中文遊戲名就算有字型也畫不出來(會是一排方塊)。只有 95K。
-cp "$ROOT/scummvm-src/gui/themes/scummremastered.zip" "$STAGE/extra/"
+# [雷] Windows 版**不放** GUI theme。theme 的字型是 TTF，載入要 FreeType，而 mingw 樹的
+# config.h 是 `#undef USE_FREETYPE2`（Linux 那棵是 #define）—— theme 找得到也一定失敗：
+#   Parser error: Error loading localized Font in theme engine.
+#   WARNING: Failed to load theme 'scummremastered.zip'!
+# 然後退回內建樣式。放了只是讓包多 95K 卻沒有任何效果。
+# 中文遊戲名不受影響：內建樣式一樣走 ThemeEngine::loadFont，ChtGuiFont 照樣掛得上去
+# （wine 實測，清單中文正常顯示）。要讓 Windows 版也有 remastered 外觀，得先為 mingw
+# 交叉編一份 freetype，那是另一件事。
 
 if [ "$MODE" = "full" ]; then
   stage_mt32_rom "$STAGE/extra" || true
@@ -62,40 +67,70 @@ if [ "$MODE" = "full" ]; then
   cp -r "$ROOT/game/." "$STAGE/game/"
 fi
 
-# .bat 啟動器:第一次執行(scummvm.ini 不存在)才產生 ini;之後沿用既有設定。
-cat > "$STAGE/玩-國王密令-繁中.bat" <<'BAT'
-@echo off
-chcp 950 >nul
-cd /d "%~dp0"
+# scummvm.ini 模板：**靜態 UTF-8 檔案**，不由 .bat 的 echo 產生。
+#
+# [HARD] .bat 不能拿來 echo 中文寫 ini：cmd.exe 逐行以「目前 code page」解讀 .bat，
+# 而 ScummVM 讀 ini 是 UTF-8。要嘛 .bat 存成 CP950 讓 cmd 讀對、寫出去的 ini 變 Big5
+# 讓 ScummVM 讀錯，要嘛存成 UTF-8 讓 ScummVM 讀對、cmd 卻把中文看成亂碼而指令解析失敗
+# ——兩邊不可能同時滿足。改成「模板檔用 UTF-8 預先寫好，.bat 只負責複製」就沒有這個矛盾，
+# .bat 本身可以維持純 ASCII。
+#
+# 路徑一律用相對路徑（相對於 .bat 所做的 cd /d "%~dp0"）：省掉 %~dp0 展開與跳脫，
+# 玩家把整包搬到任何位置都不用改設定。實測 ScummVM 的 extrapath/path
+# 都吃相對路徑。
+INI_TMPL="$STAGE/extra/scummvm.ini.default"
+{
+  echo "[scummvm]"
+  # GUI 的中文字型(kq1_gui.fnt)在遊戲啟動前就要載入,game section 的 extrapath 那時
+  # 還沒生效 —— 少了這行,啟動器清單裡的中文遊戲名會變成一排方塊。
+  echo "extrapath=extra"
+  echo
+  echo "[kq1agi]"
+  echo "description=國王密令 I（1984 AGI 原版）"
+  echo "engineid=agi"
+  echo "gameid=kq1"
+  echo "extrapath=extra"
+  [ "$MODE" = "full" ] && echo "path=game/agi_1984/KQ1"
+  [ -f "$STAGE/extra/MT32_CONTROL.ROM" ] && echo "music_driver=mt32"
+  echo
+  echo "[kq1sci]"
+  echo "description=國王密令 I（1990 SCI 重製版）"
+  echo "engineid=sci"
+  echo "gameid=kq1sci"
+  echo "language=tw"
+  echo "extrapath=extra"
+  [ "$MODE" = "full" ] && echo "path=game/sci_1990/KQ1NEW"
+  [ -f "$STAGE/extra/MT32_CONTROL.ROM" ] && echo "music_driver=mt32"
+} > "$INI_TMPL"
 
-if exist scummvm.ini goto :launch
-
-> scummvm.ini echo [scummvm]
-rem GUI 的中文字型(kq1_gui.fnt)在遊戲啟動前就要載入,game section 的 extrapath 那時
-rem 還沒生效 —— 少了這行,啟動器清單裡的中文遊戲名會變成一排方塊。
->>scummvm.ini echo extrapath=%~dp0extra
->>scummvm.ini echo themepath=%~dp0extra
->>scummvm.ini echo.
->>scummvm.ini echo [kq1agi]
->>scummvm.ini echo description=國王密令 I（1984 AGI 原版）
->>scummvm.ini echo engineid=agi
->>scummvm.ini echo gameid=kq1
->>scummvm.ini echo extrapath=%~dp0extra
-if exist "game\agi_1984\KQ1\OBJECT" >>scummvm.ini echo path=%~dp0game\agi_1984\KQ1
-if exist "extra\MT32_CONTROL.ROM" >>scummvm.ini echo music_driver=mt32
->>scummvm.ini echo.
->>scummvm.ini echo [kq1sci]
->>scummvm.ini echo description=國王密令 I（1990 SCI 重製版）
->>scummvm.ini echo engineid=sci
->>scummvm.ini echo gameid=kq1sci
->>scummvm.ini echo language=tw
->>scummvm.ini echo extrapath=%~dp0extra
-if exist "game\sci_1990\KQ1NEW\RESOURCE.MAP" >>scummvm.ini echo path=%~dp0game\sci_1990\KQ1NEW
-if exist "extra\MT32_CONTROL.ROM" >>scummvm.ini echo music_driver=mt32
-
-:launch
-scummvm.exe --config=scummvm.ini
-BAT
+# .bat 啟動器：內容全 ASCII、換行 CRLF、檔名也全 ASCII。
+#
+# [HARD] 三件事都必須做到，少一件玩家那端就是「黑視窗閃一下就沒了」或「檔案解壓後消失」：
+#   1. 換行必須 CRLF。cmd.exe 對 LF-only 的 .bat 解析不可靠（label/goto 尤其容易整支中斷）。
+#   2. 內容維持純 ASCII，中文一律放在上面那份 UTF-8 的 ini 模板裡。
+#   3. 檔名維持純 ASCII —— Linux 的 zip 寫 UTF-8 檔名卻不設 UTF-8 旗標時，
+#      Windows 內建解壓縮會用系統 ANSI(CP950) 解讀，中文檔名變非法字元、該檔直接解不出來。
+#      （下面 zip 也補上 -UN=UTF8，但檔名保持 ASCII 才是真正保險的那道。）
+printf '%s\r\n' \
+  '@echo off' \
+  'cd /d "%~dp0"' \
+  '' \
+  'rem First run: seed scummvm.ini from the UTF-8 template (Chinese game names live there).' \
+  'if not exist "scummvm.ini" copy /y "extra\scummvm.ini.default" "scummvm.ini" >nul' \
+  '' \
+  'if not exist "scummvm.exe" (' \
+  '  echo scummvm.exe not found. Extract the whole ZIP first, then run this file.' \
+  '  pause' \
+  '  exit /b 1' \
+  ')' \
+  '' \
+  'scummvm.exe --config=scummvm.ini' \
+  'if errorlevel 1 (' \
+  '  echo.' \
+  '  echo ScummVM exited with an error. The message above may explain why.' \
+  '  pause' \
+  ')' \
+  > "$STAGE/PLAY-KQ1-CHT.bat"
 
 # README 內容依 patch/full 組字串,避免巢狀 heredoc(易讀錯 delimiter)。
 if [ "$MODE" = "full" ]; then
@@ -116,14 +151,25 @@ else
   README_MT32="  本包未附 ROM（版權因素不隨 patch 散布）。自備 MT-32_CONTROL.ROM + MT32_PCM.ROM 放進 extra\\ 資料夾後刪掉 scummvm.ini 重開一次即可自動偵測。"
 fi
 
-cat > "$STAGE/README.txt" <<TXT
+# 開頭補 UTF-8 BOM：Windows 舊版記事本看到沒有 BOM 的 UTF-8 會當成 ANSI(CP950) 解讀，
+# 中文就變亂碼。BOM 只有三個位元組，換掉整份文件讀不了的風險很划算。
+printf '\xEF\xBB\xBF' > "$STAGE/README.txt"
+cat >> "$STAGE/README.txt" <<TXT
 國王密令 I（King's Quest I: Quest for the Crown）繁體中文化 — Windows x86_64 $README_TITLE
 
-雙擊「玩-國王密令-繁中.bat」開啟 ScummVM，清單裡有兩個項目：
-  kq1agi  — 1984 AGI 原版
-  kq1sci  — 1990 SCI 重製版
+【怎麼玩】
+  1. 把整個 ZIP 解開到同一個資料夾（不要只解出 .bat 單獨執行）
+  2. 雙擊 PLAY-KQ1-CHT.bat
+  3. ScummVM 清單裡有兩個項目，挑一個雙擊：
+       國王密令 I（1984 AGI 原版）
+       國王密令 I（1990 SCI 重製版）
+
+  .bat 只做兩件事：切到自己所在的資料夾、第一次執行時把 extra\\scummvm.ini.default
+  複製成 scummvm.ini，然後啟動 scummvm.exe。若它閃一下就關掉，多半是 ZIP 沒有完整解開，
+  這時 .bat 會停下來顯示訊息（按任意鍵才關閉），照著訊息處理即可。
 
 內容物：
+  PLAY-KQ1-CHT.bat               啟動器（內容為純 ASCII，避免 cmd.exe 的編碼問題）
   scummvm.exe                    patched ScummVM（AGI+SCI 雙軌 Big5 中文繪字 + MT-32 音源模擬）
   SDL2.dll / libwinpthread-1.dll  執行所需 runtime（其餘為 Windows 系統內建 DLL）
   extra\\                         $README_EXTRA_LINE
@@ -132,8 +178,8 @@ $README_HOWTO
 若要用 Roland MT-32 音源（推薦，音色遠優於 AdLib）：
 $README_MT32
 
-若把整個資料夾搬到別的路徑：請先刪除 scummvm.ini 再重新執行一次 .bat，讓它依新路徑重新產生設定檔
-（先前手動加入的遊戲路徑需要重新指定一次）。
+設定檔 scummvm.ini 裡的路徑全部是相對路徑，所以整個資料夾搬到任何位置都能直接用，
+不需要刪掉重建。
 
 repo（patch-only，不含遊戲資源/ROM）：https://github.com/wicanr2/kq1-dos-cht
 TXT
@@ -141,5 +187,8 @@ TXT
 OUT_TMP="$OUT"
 rm -f "$OUT_TMP"
 echo ">> [$MODE] zip 打包"
-( cd "$STAGE" && zip -qr "$OUT_TMP" . )
+# -UN=UTF8：把檔名以 UTF-8 存並「設好 UTF-8 旗標(general purpose bit 11)」。
+# 少了旗標，Windows 內建解壓縮會拿系統 ANSI(繁中是 CP950) 去解讀 UTF-8 檔名位元組，
+# 非 ASCII 檔名就變成非法字元、該檔直接解不出來 —— 玩家看到的現象是「檔案消失」。
+( cd "$STAGE" && zip -qr -UN=UTF8 "$OUT_TMP" . )
 echo ">> [$MODE] 完成: $OUT_TMP ($(du -h "$OUT_TMP" | cut -f1))"
