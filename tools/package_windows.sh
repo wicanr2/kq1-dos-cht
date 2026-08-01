@@ -51,14 +51,12 @@ docker run --rm --name kq1-winpkg-pthreaddll "$MINGW_IMG" cat /usr/x86_64-w64-mi
 echo ">> [$MODE] 放入中文資料(translation.tsv + Big5 字型 + 標題疊圖)"
 cp -r "$ROOT/dist-cht/." "$STAGE/extra/"
 
-# [雷] Windows 版**不放** GUI theme。theme 的字型是 TTF，載入要 FreeType，而 mingw 樹的
-# config.h 是 `#undef USE_FREETYPE2`（Linux 那棵是 #define）—— theme 找得到也一定失敗：
-#   Parser error: Error loading localized Font in theme engine.
-#   WARNING: Failed to load theme 'scummremastered.zip'!
-# 然後退回內建樣式。放了只是讓包多 95K 卻沒有任何效果。
-# 中文遊戲名不受影響：內建樣式一樣走 ThemeEngine::loadFont，ChtGuiFont 照樣掛得上去
-# （wine 實測，清單中文正常顯示）。要讓 Windows 版也有 remastered 外觀，得先為 mingw
-# 交叉編一份 freetype，那是另一件事。
+# GUI theme。曾經因為 mingw 樹沒有 FreeType 而拿掉過（theme 的字型是 TTF，載入必定失敗、
+# 退回內建陽春樣式），後來在 docker/Dockerfile.mingw 補上交叉編譯的 freetype，
+# config.h 變成 #define USE_FREETYPE2，theme 就正常了。
+# 換 mingw image 後若又看到 `Error loading localized Font in theme engine`，先確認
+# `grep USE_FREETYPE2 build/mingw-tree/config.h` 是不是又變回 #undef。
+cp "$ROOT/scummvm-src/gui/themes/scummremastered.zip" "$STAGE/extra/"
 
 if [ "$MODE" = "full" ]; then
   stage_mt32_rom "$STAGE/extra" || true
@@ -81,9 +79,18 @@ fi
 INI_TMPL="$STAGE/extra/scummvm.ini.default"
 {
   echo "[scummvm]"
+  # [HARD] GUI 語言鎖英文。不設的話 ScummVM 會依系統地區自動挑翻譯,而 theme 對非英文語言
+  # 一律要求 scalable(TTF) 字型(ThemeEngine::loadFont 的 allowNonScalable =
+  # TransMan.currentIsBuiltinLanguage())—— mingw 沒有 FreeType 就整個 theme 載入失敗、
+  # 退回內建陽春樣式。繁中的 GUI 翻譯上游是空的(3228 條全未翻),抓到的多半是簡體,
+  # 對繁中化專案更糟。鎖英文同時解決兩件事,而且不必為了 theme 去交叉編 FreeType
+  # (那會讓 ScummVM 連 37MB 的 fonts-cjk.dat 一起嵌進 exe,包從 11M 變 54M)。
+  # 遊戲清單裡的中文遊戲名不受影響 —— 那是 ChtGuiFont 畫的,與 GUI 語言無關。
+  echo "gui_language=en"
   # GUI 的中文字型(kq1_gui.fnt)在遊戲啟動前就要載入,game section 的 extrapath 那時
   # 還沒生效 —— 少了這行,啟動器清單裡的中文遊戲名會變成一排方塊。
   echo "extrapath=extra"
+  echo "themepath=extra"
   echo
   echo "[kq1agi]"
   echo "description=國王密令 I（1984 AGI 原版）"

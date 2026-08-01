@@ -14,6 +14,7 @@ RUN update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32
 
 ARG SDL2_VER=2.30.9
 ARG ZLIB_VER=1.3.1
+ARG FREETYPE_VER=2.13.3
 
 # --- SDL2 mingw devel (官方預編譯 mingw 開發庫) ---
 RUN curl -fsSL -o /tmp/SDL2-mingw.tar.gz \
@@ -32,6 +33,33 @@ RUN curl -fsSL -o /tmp/zlib.tar.gz "https://zlib.net/fossils/zlib-${ZLIB_VER}.ta
  && make -j"$(nproc)" libz.a \
  && make install -j"$(nproc)" \
  && cd / && rm -rf /tmp/zlib /tmp/zlib.tar.gz
+
+# --- FreeType：試過，可行，但刻意不裝 ---
+# 交叉編譯 freetype 本身沒問題（configure --host=x86_64-w64-mingw32 + 可選相依全關，
+# 約兩分鐘，已實測 `Checking for FreeType2... yes`）。不裝的理由是代價不成比例：
+# ScummVM 一旦偵測到 FreeType，就會把 37MB 的 dists/engine-data/fonts-cjk.dat
+# （NotoSans JP/KR/SC/TC 四套）嵌進 exe 的 .rsrc —— Windows 包從 11M 變成 54M。
+#
+# 而我們原本想靠它解決的「GUI theme 載入失敗」，根本原因不在 FreeType：
+# ThemeEngine::loadFont 的 `allowNonScalable = TransMan.currentIsBuiltinLanguage()`
+# —— 只有非英文 GUI 語言才強制要 scalable(TTF) 字型。打包腳本在 scummvm.ini 鎖
+# `gui_language=en` 之後，theme 用內建點陣字就載得起來，包也維持 11M。
+# 遊戲清單的中文遊戲名由 ChtGuiFont 畫，與 GUI 語言、與 FreeType 都無關。
+#
+# 真要啟用（例如將來上游補齊繁中 GUI 翻譯）：把下面這段解除註解，並確認它排在最後那行
+# ENV PATH 之前 —— SDL2 的 mingw devel 會把自己的 `as` 灌進 /usr/x86_64-w64-mingw32/bin，
+# 一旦排在 PATH 前面，freetype configure 用 native gcc 編 build-time 工具就會抓到交叉版
+# 組譯器，噴 "junk at end of line" 並判定 "native C compiler is not working"。
+#
+# RUN curl -fsSL -o /tmp/freetype.tar.xz \
+#       "https://downloads.sourceforge.net/project/freetype/freetype2/${FREETYPE_VER}/freetype-${FREETYPE_VER}.tar.xz" \
+#  && mkdir -p /tmp/freetype && tar xf /tmp/freetype.tar.xz -C /tmp/freetype --strip-components=1 \
+#  && cd /tmp/freetype \
+#  && ./configure --host=x86_64-w64-mingw32 --prefix=/usr/x86_64-w64-mingw32 \
+#       --enable-static --disable-shared \
+#       --with-zlib=no --with-png=no --with-harfbuzz=no --with-brotli=no --with-bzip2=no \
+#  && make -j"$(nproc)" && make install \
+#  && cd / && rm -rf /tmp/freetype /tmp/freetype.tar.xz
 
 ENV PATH="/usr/x86_64-w64-mingw32/bin:${PATH}"
 WORKDIR /src

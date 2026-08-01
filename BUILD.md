@@ -87,7 +87,10 @@ full 版一律「下載 CI 的 patch artifact → 本機注入 game/ 與 ROM」�
   `extra/scummvm.ini.default`，`.bat` 只負責 `copy` 它。理由與症狀見共用模板
   「Windows 包常見雷」。
 - zip 用 `zip -UN=UTF8`（設 UTF-8 檔名旗標）。
-- Windows 包**不放** GUI theme：mingw 樹 `#undef USE_FREETYPE2`，theme 一定載入失敗。
+- `scummvm.ini` 鎖 `gui_language=en`。不鎖的話 ScummVM 依系統地區挑 GUI 翻譯，而 theme
+  對非英文語言強制要 TTF 字型（mingw 沒有 FreeType）→ theme 整個載入失敗；抓到的翻譯
+  往往還是簡體。**別為了這個去交叉編 FreeType**：ScummVM 一偵測到它就會把 37MB 的
+  `fonts-cjk.dat` 嵌進 exe，包從 11M 變 54M（實測過）。詳見共用模板該節第 6 條。
 
 沒有 Windows 機器也能端對端驗：
 
