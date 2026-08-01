@@ -81,6 +81,23 @@ bash tools/package_macos_full.sh /tmp/ci-mac/*/KQ1-CHT-patch-macos-universal.tar
 full 版一律「下載 CI 的 patch artifact → 本機注入 game/ 與 ROM」，因為 CI runner
 拿不到那些檔案（都 gitignore）。
 
+### Windows 包的三個必守項（玩家端最容易炸）
+
+- `.bat` 換行 **CRLF**、內容 **純 ASCII**、檔名 **純 ASCII**。中文一律放進 UTF-8 的
+  `extra/scummvm.ini.default`，`.bat` 只負責 `copy` 它。理由與症狀見共用模板
+  「Windows 包常見雷」。
+- zip 用 `zip -UN=UTF8`（設 UTF-8 檔名旗標）。
+- Windows 包**不放** GUI theme：mingw 樹 `#undef USE_FREETYPE2`，theme 一定載入失敗。
+
+沒有 Windows 機器也能端對端驗：
+
+```bash
+export WINEPREFIX=/tmp/wp WINEDEBUG=-all DISPLAY=:91
+Xvfb :91 -screen 0 800x600x24 & sleep 3
+cd <解開的包> && wine cmd /c PLAY-KQ1-CHT.bat &
+sleep 25 && xwd -root -silent > /tmp/s.xwd     # capture image 沒有 import 就用 xwd
+```
+
 **驗收**：patch 版解開後不得出現 `RESOURCE.*`、`VOL.*`、`*.DRV`、`SCIV.EXE`、`OBJECT`、
 `WORDS.TOK`、`LOGDIR`、`PICDIR`——出現任何一個就是把遊戲資源打進去了，不能發布。
 
