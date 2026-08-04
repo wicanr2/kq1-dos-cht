@@ -72,13 +72,15 @@
 
 | 1990 SCI 重製版 | |
 |---|---|
-| ![對白](screenshots/sci-dialog.png) | ![選單](screenshots/sci-menu.png) |
-| 對白用倚天點陣字 | 選單列與下拉項全中文 |
+| ![對白](screenshots/sci-dialog.png) | ![選單與狀態列](screenshots/sci-status-menu.png) |
+| 對白用倚天點陣字 | 選單列、下拉項與狀態列全中文 |
 
 | 1984/1987 AGI 原版 | |
 |---|---|
 | ![狀態列](screenshots/agi-status.png) | ![對白](screenshots/agi-dialog.png) |
 | 狀態列、得分、音效開關都中文化 | 640×400 畫布下的中文對白 |
+| ![選單](screenshots/agi-menu.png) | ![道具欄](screenshots/agi-inventory.png) |
+| 選單列與下拉項全中文 | 道具欄與系統提示 |
 
 ## 兩個版本都能玩
 
