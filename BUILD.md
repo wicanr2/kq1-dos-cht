@@ -53,6 +53,10 @@ bash tools/build_translation.sh
 （遊戲內）與 `kq1_gui.fnt`（ScummVM 啟動器清單，索引是 Unicode 碼位不是 Big5）。
 產物都在 `dist-cht/`。
 
+**[雷] 要改譯文請改 `translation/done/*.done`，不是 `translation/translation_sci.tsv`。**
+`build_translation.sh` 第一步的 `merge_check.py` 會用 `done/` 重新產生
+`translation_sci.tsv`，手改那份會被無聲蓋掉（改完跑 build 看起來成功，實機卻沒變）。
+
 不烘 24×24 hi-res 字型：那條路徑需要強制 640×400 upscale，KQ1 的常駐狀態列撐不住
 （連英文都破圖），引擎端已整條移除，見 `scummvm-src/engines/sci/graphics/screen.cpp`
 的 CHT note。

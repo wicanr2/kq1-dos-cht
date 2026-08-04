@@ -34,10 +34,6 @@ static const char *kChineseFontFile = "kq1_big5.fnt";
 // Low-res advance (menu path): the ETEN low-res glyph is 16px wide and drawBig5Char clips to
 // this width, so anything narrower shaves strokes off the right edge of menu titles.
 static const int kBig5Width = 16;
-// Status-bar advance: the compact path draws the 16-px-wide low-res glyph 1:1 into the display
-// buffer, so one character occupies exactly 8 logical columns — packed, and short enough that
-// the score/title line still fits across 320 columns.
-static const int kBig5WidthCompact = 8;
 // Upper bound of what Big5Font::drawBig5Char() may write into a scratch buffer. Size scratch
 // buffers by these, never by kBig5Width: the low-res path can be handed a 16px destination
 // pitch, and a kBig5Width-sized buffer would then overflow (arm64 -fstack-protector-strong
@@ -96,11 +92,8 @@ byte GfxFontChinese::getCharWidth(uint16 chr) {
 	// combined lead|(trail<<8) value (during drawing). Both mean a Big5 char.
 	// The advance must match what draw() actually paints, or line-wrapping (GetLongest) and
 	// rendering disagree and text overflows its box.
-	if (chr > 0xFF || isDoubleByte(chr)) {
-		if (_screen->compactTextActive())
-			return kBig5WidthCompact;
+	if (chr > 0xFF || isDoubleByte(chr))
 		return kBig5Width;
-	}
 	return _asciiFont->getCharWidth(chr);
 }
 
@@ -119,15 +112,6 @@ void GfxFontChinese::draw(uint16 chr, int16 top, int16 left, byte color, bool gr
 
 	// Double-byte: chr == lead | (trail << 8); Big5Font wants (lead << 8) | trail.
 	uint16 point = ((chr & 0xFF) << 8) | (chr >> 8);
-
-	// Compact path: only reachable on an upscaled display, where the status bar's fixed height
-	// (10 script rows) would otherwise force the glyph through a 2x scale it has no room for.
-	// KQ1 runs unscaled, so this is inert today and the normal path below does the drawing;
-	// it stays for the same reason the compact advance does — see kBig5WidthCompact.
-	if (_screen->compactTextActive() && _screen->getDisplayWidth() > _screen->getWidth()) {
-		if (drawCompact(point, top, left, color))
-			return;
-	}
 
 	byte glyph[kBig5GlyphMaxW * kBig5GlyphMaxH];
 	memset(glyph, 0, sizeof(glyph));
@@ -154,42 +138,6 @@ void GfxFontChinese::draw(uint16 chr, int16 top, int16 left, byte color, bool gr
 				_screen->putFontPixel(top, screenX, y, color);
 		}
 	}
-}
-
-// Draw the 16x15 low-res Big5 glyph at 1:1 into the display buffer, so it keeps its own pixel
-// size instead of being 2x-upscaled. Used for the fixed-height status bar. Returns false when
-// the glyph is unavailable so the caller can fall back.
-bool GfxFontChinese::drawCompact(uint16 point, int16 top, int16 left, byte color) {
-	if (!_big5)
-		return false;
-	byte glyph[kBig5GlyphMaxW * kBig5GlyphMaxH];
-	memset(glyph, 0, sizeof(glyph));
-	const int gw = Graphics::Big5Font::kChineseTraditionalWidth;
-	if (!_big5->drawBig5Char(glyph, point, gw, _big5Height, gw,
-	                         /*color*/ 1, /*outlineColor*/ 0, /*outline*/ false, /*bpp*/ 1))
-		return false;
-
-	const int dispLeft = left * 2;
-	const int dispTop = top * 2;
-	const int dispW = _screen->getDisplayWidth();
-	const int dispH = _screen->getDisplayHeight();
-
-	const bool savedUpscaled = _screen->fontIsUpscaled();
-	_screen->setFontIsUpscaled(true);
-	for (int gy = 0; gy < _big5Height; gy++) {
-		if (dispTop + gy < 0 || dispTop + gy >= dispH)
-			continue;
-		for (int gx = 0; gx < gw; gx++) {
-			if (!glyph[gy * gw + gx])
-				continue;
-			const int dispX = dispLeft + gx;
-			if (dispX < 0 || dispX >= dispW)
-				continue;
-			_screen->putFontPixel(dispTop, dispX, gy, color);
-		}
-	}
-	_screen->setFontIsUpscaled(savedUpscaled);
-	return true;
 }
 
 } // End of namespace Sci

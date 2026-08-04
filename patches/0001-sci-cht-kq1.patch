@@ -516,7 +516,7 @@ index 308fa82c..449fb126 100644
  	if (!_width)
  		_width = _scriptWidth;
 diff --git a/engines/sci/graphics/screen.h b/engines/sci/graphics/screen.h
-index eaed025a..7bbdb648 100644
+index eaed025a..8d45dcf7 100644
 --- a/engines/sci/graphics/screen.h
 +++ b/engines/sci/graphics/screen.h
 @@ -78,6 +78,7 @@ public:
@@ -527,7 +527,7 @@ index eaed025a..7bbdb648 100644
  	byte getColorWhite() { return _colorWhite; }
  	byte getColorDefaultVectorData() { return _colorDefaultVectorData; }
  
-@@ -151,6 +152,15 @@ public:
+@@ -151,6 +152,13 @@ public:
  	void setFontIsUpscaled(bool isUpscaled) { _fontIsUpscaled = isUpscaled; }
  	bool fontIsUpscaled() const { return _fontIsUpscaled; }
  
@@ -537,25 +537,22 @@ index eaed025a..7bbdb648 100644
 +	// bitsShow (re-upscale) would wipe to a black-on-black (invisible) selection.
 +	void setMenuTextActive(bool active) { _menuTextActive = active; }
 +	bool menuTextActive() const { return _menuTextActive; }
-+	void setCompactTextActive(bool active) { _compactTextActive = active; }
-+	bool compactTextActive() const { return _compactTextActive; }
 +
  	void grabPalette(byte *buffer, uint start, uint num) const;
  	void setPalette(const byte *buffer, uint start, uint num, bool update = true);
  
-@@ -249,6 +259,10 @@ private:
+@@ -249,6 +257,9 @@ private:
  	 * to the screen size (and we therefore should not upscale it ourselves).
  	 */
  	bool _fontIsUpscaled;
 +	bool _menuTextActive = false;
 +	// CHT: true while the status bar draws — it is only 10 script rows tall, so Chinese must
 +	// use the compact 16x15 glyph instead of the 24px hi-res one or it gets clipped.
-+	bool _compactTextActive = false;
  
  
  	// pixel related code, in header so that it can be inlined for performance
 diff --git a/engines/sci/graphics/text16.cpp b/engines/sci/graphics/text16.cpp
-index 9e5647f3..4717a3cd 100644
+index 9e5647f3..b1680efe 100644
 --- a/engines/sci/graphics/text16.cpp
 +++ b/engines/sci/graphics/text16.cpp
 @@ -19,6 +19,9 @@
@@ -632,7 +629,7 @@ index 9e5647f3..4717a3cd 100644
  	Width(str.c_str(), 0, str.size(), orgFontId, textWidth, textHeight, true);
  }
  
-@@ -441,7 +476,48 @@ void GfxText16::ShowString(const Common::String &str, GuiResourceId orgFontId, i
+@@ -441,7 +476,46 @@ void GfxText16::ShowString(const Common::String &str, GuiResourceId orgFontId, i
  }
  #endif
  
@@ -662,8 +659,6 @@ index 9e5647f3..4717a3cd 100644
 +	Width(translated, 0, strlen(translated), fontId, chineseWidth, unusedHeight, true);
 +	SetFont(previousFontId);
 +
-+	if (getenv("SCI_CHT_DEBUG"))
-+		warning("KQ1DBG chtControlOffset text='%s' rectW=%d enW=%d zhW=%d", text, rect.width(), englishWidth, chineseWidth);
 +	if (englishWidth <= 0 || chineseWidth <= 0 || rect.width() != chineseWidth)
 +		return 0;
 +	return (englishWidth - chineseWidth) / 2;
@@ -681,7 +676,7 @@ index 9e5647f3..4717a3cd 100644
  	Draw(str.c_str(), 0, str.size(), orgFontId, orgPenColor);
  }
  
-@@ -569,6 +645,19 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
+@@ -569,6 +643,19 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
  	int16 textWidth, maxTextWidth, textHeight;
  	int16 offset = 0;
  	int16 hline = 0;
@@ -701,7 +696,7 @@ index 9e5647f3..4717a3cd 100644
  	GuiResourceId previousFontId = GetFontId();
  	int16 previousPenColor = _ports->_curPort->penClr;
  	bool doubleByteMode = false;
-@@ -683,10 +772,18 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
+@@ -683,10 +770,18 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
  	_ports->penColor(previousPenColor);
  }
  
@@ -721,7 +716,7 @@ index 9e5647f3..4717a3cd 100644
  	Common::String text;
  	if (!g_sci->isLanguageRTL())
  		text = textOrig;
-@@ -700,11 +797,19 @@ void GfxText16::DrawString(const Common::String &textOrig) {
+@@ -700,11 +795,19 @@ void GfxText16::DrawString(const Common::String &textOrig) {
  
  // we need to have a separate status drawing code
  //  In KQ4 the IV char is actually 0xA, which would otherwise get considered as linebreak and not printed
@@ -742,13 +737,8 @@ index 9e5647f3..4717a3cd 100644
  	Common::String str;
  	if (!g_sci->isLanguageRTL())
  		str = strOrig;
-@@ -717,8 +822,18 @@ void GfxText16::DrawStatus(const Common::String &strOrig) {
- 
- 	rect.top = _ports->_curPort->curTop;
+@@ -719,6 +822,13 @@ void GfxText16::DrawStatus(const Common::String &strOrig) {
  	rect.bottom = rect.top + _ports->_curPort->fontHeight;
-+	// CHT: the status bar is only 10 script rows (20 display rows) tall, so a 24px hi-res
-+	// glyph overflows it — tell GfxFontChinese to use its compact 16x15 glyph here.
-+	_screen->setCompactTextActive(true);
  	while (textLen--) {
  		uint16 curChar = *text++;
 +		// The status bar draws byte by byte, which turns a Big5 pair into two garbage Latin
@@ -761,14 +751,6 @@ index 9e5647f3..4717a3cd 100644
  		switch (curChar) {
  		case 0:
  			break;
-@@ -729,6 +844,7 @@ void GfxText16::DrawStatus(const Common::String &strOrig) {
- 		}
- 		}
- 	}
-+	_screen->setCompactTextActive(false);
- }
- 
- // Check for Korean strings, and use font 1001 to render them
 diff --git a/engines/sci/graphics/text16.h b/engines/sci/graphics/text16.h
 index 5dbd4106..ac40f73a 100644
 --- a/engines/sci/graphics/text16.h

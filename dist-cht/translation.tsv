@@ -139,6 +139,7 @@ Sir Graham, please try to find another word for "%s."	®æ©Ôº~Àï¤h¡A½Ð¸ÕµÛ¬°¡u%s¡v
 "%s" in "%s"	¡u%s¡v¦b¡u%s¡v¤¤
 Please try to rephrase that thought, Sir Graham.	®æ©Ôº~Àï¤h¡A½Ð¸ÕµÛ´«¥y¸Ü»¡¡C
 Please try something else, Sir Graham.	®æ©Ôº~Àï¤h¡A½Ð¸Õ¸Õ§Oªº¿ìªk¡C
+ Score: %d of %d%13s%s%1s	 ±o¤À¡G%d¢A%d%13s%s%1s
 You see a useless dead goat lying lifeless on the ground.	§A¬Ý¨£¤@°¦²@µL¥Î³Bªº¤s¦Ï¦º«Í¡Aª½®¼®¼¦a½ö¦b¦a¤W¡C
 The goat is grazing nearby.	¤s¦Ï¥¿¦bªþªñ¦Y¯ó¡C
 The old goat, trotting briskly, seems happy to be with you.	³o°¦¦Ñ¤s¦Ï¤p¶]¨B¸òµÛ§A¡A¬Ý°_¨Ó«Ü¶}¤ß¯à¸ò§A¦b¤@°_¡C
@@ -1609,6 +1610,7 @@ This large ceramic bowl is now filled with a savory beef stew.	³o¥u¤j³³¸J²{¦b¸Ëº
 Unknown word	¥¼ª¾ªº¦rµü
 Couldn't parse	µLªk¸ÑªR
 No response	¨S¦³¦^À³
+King's Quest I	°ê¤ý±K¥O I
  Dagger 	 µu¤M 
 This is a fine silver dagger, with a very sharp edge!	³o¬O¤@§âºë¬üªº»È»sµu¤M¡A¤M¤b¤Q¤À¾W§Q¡I
  Chest 	 ª÷²°¤l 

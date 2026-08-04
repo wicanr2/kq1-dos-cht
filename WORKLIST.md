@@ -94,34 +94,41 @@
 
 ## 已知限制
 
-- **[SCI 軌] 狀態列文字仍是英文（`Score: 0 of 158` / `King's Quest I`）**。
-  **注意：舊版這裡寫的理由「中文放不下、加高會破圖」已經不成立**（2026-08-04 實測推翻）——
-  當初的破圖來自「ZH_TWN 強制 640×400 upscale × 狀態列繪製」的互動，而那條 hi-res 路徑
-  已於 2026-07-31 整條移除。選單列／狀態列共用的 `_menuBarRect`（`ports.cpp`）現在在
-  ZH_TWN 下加高到 15 列，實測狀態列白底完整、選單列中文完整、關閉選單無殘影。
-  剩下的真正原因單純是**翻譯缺口**：狀態列字串是 script 用 kFormat 組出來的模板，
-  `translation.tsv` 裡沒有對應 key（`grep -a Score dist-cht/translation.tsv` → 無）。
-  要中文化得先 dump script 找出模板（形如 `Score: %d of %d`）再走 kFormat hook 那條路。
-  AGI 軌的狀態列早就是中文（`得分：0 / 158`），兩軌在這點上不一致。
+（原本這裡有兩條：SCI 狀態列維持英文、AGI 選單中英混雜。2026-08-04 兩條都做完了，
+紀錄移到下面的「兩軌 UI 完整度」。）
 
-  以下是 hi-res 時代的完整診斷紀錄，保留備查（**結論已被上面推翻，別再照著做**）——
-  原症狀：中文版狀態列文字上半被裁、左半段變成白字黑底（英文對照版正常）。
-  排除過：① 不是譯文太長；② 不是 `DrawStatus` 沒合併雙位元組；③ 不是 `_menuBarRect` 高度；
-  ④ 不是 `getHeight()` 回 12。**根因**：`KQ1_PROBE_NO_UPSCALE=1` 關掉強制 upscale 後狀態列
-  完全正常 → 是「強制 upscale × 狀態列繪製」的互動。兩個 probe 開關已於出包前清掉。
+## 兩軌 UI 完整度（2026-08-04 補完）
+
+- **SCI 狀態列已中文化**：`得分：0 / 158` + `國王密令 I`。
+  當初寫的「中文放不下、加高會破圖」是錯的 —— 破圖來自「ZH_TWN 強制 640×400 upscale
+  × 狀態列繪製」的互動，那條 hi-res 路徑 7/31 就整條移除了。現在 `_menuBarRect`
+  （選單列與狀態列共用，兩者都從它 fillRect）在 ZH_TWN 下是 15 列。
+  文字本身是 script 用 kFormat 組的模板 `" Score: %d of %d%13s%s%1s"`，
+  用 `SCI_CHT_DEBUG=1` 從 `kFormat` 印出來才拿得到（`SCI_DUMP_RES` 的 script dump 裡
+  **找不到** "Score" 這個字串）。譯文 `" 得分：%d／%d%13s%s%1s"`，規格序列與英文完全一致
+  所以 `sciChtMapFormatSpecs` 對得上；右側遊戲名由 `%s` 帶入，另外補了
+  `King's Quest I → 國王密令 I`（kFormat 的 `%s` 參數翻譯只在模板已翻時啟用）。
+  - **[雷] 順手清掉了 compact 文字路徑**（`kBig5WidthCompact`／`drawCompact`／
+    `_compactTextActive`）。它讓 `getCharWidth` 在狀態列回 8px advance，但 `draw()` 的
+    compact 分支要求 `getDisplayWidth() > getWidth()`（只有 upscale 時成立）—— KQ1 不
+    upscale，於是量測 8px、實際畫 16px，狀態列中文**整排疊在一起**。兩邊 gate 不一致
+    的老問題，而整條路徑對 KQ1 是死碼，直接移除。
+
+- **AGI 選單已全中文**：選單列 `資訊 檔案 遊戲 動作 特殊 速度`、下拉項與反白項都正確。
+  兩個修正缺一不可：
+  1. **查表前做空白正規化**（`chtNormKey`，與 SCI 的 `sciChtNormKey` 同一套）。
+     選單標題在 LOGIC 裡帶 padding（`" File "`），抽字時原樣進了表，引擎交來查表的字串
+     卻未必帶同樣空白 → 對不上就退回英文，於是沒 padding 的 `Game`／`Special` 命中、
+     其餘露出英文，成了中英混雜。
+  2. **選單期間中文字格要填底**（`TextMgr::setMenuTextActive`）。
+     `_textAttrib.background == 0` 有兩種語意：平常是「透明、疊在既有畫面上」（道具欄、
+     標題名單靠它），在選單裡卻是「黑底」。反白項 `charAttrib_Set(15, 0)` 畫白字，
+     而 `drawMenu` 先用 `drawBox` 鋪了白底 → 不填底就白字白底、整片消失（只剩 ASCII
+     快捷鍵可見）。ASCII 沒事是因為 `drawCharacter` 連字格背景一起畫。
+     - **[雷] 別用「一律填底」了事**：那樣道具欄（`fg=0 bg=0`）會變黑底黑字，三行字
+       全部消失。踩過，靠英文版對照才確認是迴歸。旗標只在 `GfxMenu` 繪製期間為真。
 
 ## 已知待辦雷
 
-- 字型設定：低解析 advance 16／glyph 16×15（倚天）。狀態列另有 compact advance 8，
-  但 SCI 狀態列目前未中文化，那條路徑等狀態列真的要上中文時再驗。
-
-- **[AGI 軌] 選單中英混雜**（`檔案` 未翻→顯示 `File`、`動作`→`Action`、`速度`→`Speed`，
-  而 `遊戲`／`特殊` 正常）。**譯文其實都在表裡**，問題是 key 帶 padding 空白（`" File "`），
-  AGI 端查表沒有做 SCI 那套空白正規化（`sciChtNormKey`）。
-  2026-08-04 試過在 `GfxMgr::getChtTranslation` 與建表兩處加上同樣的正規化：選單列確實
-  全中文了，但**下拉選單的反白項中文變成看不見**（只剩 ASCII 快捷鍵可見），因此已回退。
-  已查明的部分：反白項走 `charAttrib_Set(15, 0)`（白字、bg=0），中文格因此不填底；
-  glyph 有畫（`drawBig5Char` 回 true、字型內含該字），把前景色改成 14 就看得到字，
-  改回 15 就消失 —— 也就是那塊底色與前景色同為 15（白）。**尚未查清是誰把中文格的底
-  畫成白色**（ASCII 格由 `drawCharacter` 填黑，中文格不走那條）。
-  修這條要連同「反白項中文格的底色」一起處理，不能只加正規化。
+- 字型設定：低解析 advance 16／glyph 16×15（倚天），兩軌與狀態列全部走這一組。
+  compact advance 8 那條路徑已於 2026-08-04 移除（見上方「兩軌 UI 完整度」）。

@@ -139,7 +139,7 @@ Sir Graham, please try to find another word for "%s."	格拉漢爵士，請試�
 "%s" in "%s"	「%s」在「%s」中
 Please try to rephrase that thought, Sir Graham.	格拉漢爵士，請試著換句話說。
 Please try something else, Sir Graham.	格拉漢爵士，請試試別的辦法。
- Score: %d of %d%13s%s%1s	 Score: %d of %d%13s%s%1s
+ Score: %d of %d%13s%s%1s	 得分：%d／%d%13s%s%1s
 You see a useless dead goat lying lifeless on the ground.	你看見一隻毫無用處的山羊死屍，直挺挺地躺在地上。
 The goat is grazing nearby.	山羊正在附近吃草。
 The old goat, trotting briskly, seems happy to be with you.	這隻老山羊小跑步跟著你，看起來很開心能跟你在一起。
@@ -1612,7 +1612,7 @@ This large ceramic bowl is now filled with a savory beef stew.	這只大陶碗�
 Unknown word	未知的字詞
 Couldn't parse	無法解析
 No response	沒有回應
-King's Quest I	King's Quest I
+King's Quest I	國王密令 I
  Dagger 	 短刀 
 This is a fine silver dagger, with a very sharp edge!	這是一把精美的銀製短刀，刀刃十分鋒利！
  Chest 	 金盒子 

@@ -57,7 +57,6 @@ public:
 
 private:
 	// 1:1 draw into the display buffer, for the fixed-height status bar on an upscaled display.
-	bool drawCompact(uint16 point, int16 top, int16 left, byte color);
 
 	GfxScreen *_screen;
 	GuiResourceId _resourceId;
