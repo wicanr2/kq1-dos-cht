@@ -128,7 +128,41 @@
      - **[雷] 別用「一律填底」了事**：那樣道具欄（`fg=0 bg=0`）會變黑底黑字，三行字
        全部消失。踩過，靠英文版對照才確認是迴歸。旗標只在 `GfxMenu` 繪製期間為真。
 
+     > **2026-08-04 v1.4 更新:上面第 2 點的旗標做法已被取代。** 「一律填底」本身沒錯,
+     > 錯在**取色的欄位**:`calculateTextBackground()` 在非 `gfxMode`(道具欄、說明頁等
+     > 整頁文字畫面)一律回 0,真正的顏色在 `combined*` 裡,拿 `background` 去填才會
+     > 變黑底黑字。現在 `displayBig5Character()` 依 `_game.gfxMode` 取對的欄位、
+     > `drawBig5CharacterOnDisplay()` 無條件填底,`_menuTextActive` 已移除。
+     > 旗標版只補得到選單,**補不到同樣是反白(前景 15/背景 0)的道具欄選取項**——
+     > 實測三件道具裡被選取的那件整個隱形(見下方 v1.4 段)。
+
 ## 已知待辦雷
 
 - 字型設定：低解析 advance 16／glyph 16×15（倚天），兩軌與狀態列全部走這一組。
   compact advance 8 那條路徑已於 2026-08-04 移除（見上方「兩軌 UI 完整度」）。
+
+## v1.4(2026-08-04):把 KQ2 issue #1 的兩條同血統修正補完
+
+KQ2 的 GitHub issue #1 修完後回頭比對 KQ1,發現兩件事:一件是**旗標版補不到的死角**,
+一件是**還沒發作的定時炸彈**。兩條都在 AGI 軌(SCI 軌不受影響)。
+
+- [x] **道具欄的選取項整個隱形**(旗標版的死角)。
+  `_menuTextActive` 只在 `GfxMenu` 繪製期間為真,而道具欄是**文字模式**畫面,選取項
+  一樣是 `charAttrib_Set(15, 0)`(白字/黑底),照樣不填底 → 白字落在白底上消失。
+  實測(除錯主控台 `setobj` 塞三件道具 + `setflag 13 1`):選中「短刀」時短刀不見、
+  按 ↓ 換選「胡蘿蔔」時胡蘿蔔不見。**修前修後各截一張圖比對過。**
+  修法:`displayBig5Character()` 依 `_game.gfxMode` 取色——圖形模式用
+  `foreground/background`、文字模式用 `combinedForeground/combinedBackground`;
+  `drawBig5CharacterOnDisplay()` 改成無條件填底,`forceFill` 參數與 `_menuTextActive`
+  旗標一併移除(一個機制取代兩個)。
+- [x] **選單版面改用顯示欄寬計算**(定時炸彈拆除)。
+  `addMenu()`/`addMenuItem()` 的 `textLen`／`maxItemTextLen`／`column` 原本照**英文
+  byte 長度**算,中文是繪製時才換。KQ1 目前最大溢出是「離開 `<Alt Z>`」19 欄→20 欄,
+  只多 1 欄,剛好被選單盒 `maxItemTextLen * 4 + 8` 的 `+8`(＝2 欄)餘裕吃掉,所以
+  **畫面上還看不出來**(開關檔案選單前後逐像素比對過,乾淨)。但只要譯文再多一個字
+  就會像 KQ2 那樣(溢出 3 欄)在畫面上留殘影。改成加入選單時就換中譯、長度算顯示欄寬,
+  選單列截斷也以欄為單位(原本逐 byte 刪會把 Big5 字砍成半個)。
+- 未動的部分:`ChtGuiFont` 的擁有權(KQ1 用 `isWrapper()` + `isBuiltinFont()` 已擋掉
+  重複包裝與刪內建字型,與 KQ2 的「單一擁有者」做法涵蓋同樣的路徑,不重複改);
+  macOS 啟動器(KQ1 的「路徑對不上也重寫 + 留 .bak」比 KQ2 版更細,保留);
+  issue #2 的 `gui_saveload_chooser=list` 迴避設定(SCI 存檔崩潰成因未定,**不動**)。

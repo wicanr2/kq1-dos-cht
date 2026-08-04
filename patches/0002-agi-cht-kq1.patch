@@ -113,7 +113,7 @@ index 81421b47..930db287 100644
  uint16 AgiEngine::processAGIEvents() {
  	ScreenObjEntry *screenObjEgo = &_game.screenObjTable[SCREENOBJECTS_EGO_ENTRY];
 diff --git a/engines/agi/graphics.cpp b/engines/agi/graphics.cpp
-index 1bb1d202..7c125840 100644
+index 1bb1d202..f2e7b1e3 100644
 --- a/engines/agi/graphics.cpp
 +++ b/engines/agi/graphics.cpp
 @@ -26,6 +26,7 @@
@@ -308,25 +308,25 @@ index 1bb1d202..7c125840 100644
 +}
 +
 +// 在文字格 (row,column) 畫一個 16x16 中文字
-+void GfxMgr::drawBig5Character(int16 row, int16 column, uint16 big5, byte foreground, byte background, bool forceFill) {
++void GfxMgr::drawBig5Character(int16 row, int16 column, uint16 big5, byte foreground, byte background) {
 +	int16 x = column;
 +	int16 y = row;
 +	translateFontPosToDisplayScreen(x, y); // x=column*16, y=row*16（hi-res）
-+	drawBig5CharacterOnDisplay(x, y, big5, foreground, background, forceFill);
++	drawBig5CharacterOnDisplay(x, y, big5, foreground, background);
 +}
 +
-+void GfxMgr::drawBig5CharacterOnDisplay(int16 x, int16 y, uint16 big5, byte foreground, byte background, bool forceFill) {
++void GfxMgr::drawBig5CharacterOnDisplay(int16 x, int16 y, uint16 big5, byte foreground, byte background) {
 +	if (!_chtFont)
 +		return;
-+	// background 非 0 才填底（Big5Font 只畫前景 pixel）；0 = 透明，直接畫在既有畫面上。
-+	// forceFill 是選單專用的例外：那裡的 background==0 代表「黑底」而不是「透明」，
-+	// 不填就白字白底、整片消失（呼叫端 TextMgr::displayBig5Character 有完整說明）。
-+	if (background != 0 || forceFill) {
-+		for (int16 cy = 0; cy < 16; cy++) {
-+			byte *rowPtr = _displayScreen + (y + cy) * _displayScreenWidth + x;
-+			for (int16 cx = 0; cx < 16; cx++)
-+				rowPtr[cx] = background;
-+		}
++	// 一律填底（Big5Font 只畫前景 pixel），與原生 drawCharacterOnDisplay() 一致——它對每個
++	// 非字形像素都寫 background，AGI 沒有「透明字格」這回事。
++	// [雷] 早期版本把 background==0 當透明,反白處(前景 15/背景 0,原生會填黑底白字)少了黑底,
++	// 白字落在白底上整個消失。之後改用「選單專用 forceFill 旗標」只補了選單那一處,
++	// 物品欄(文字模式畫面)的反白項目照樣隱形。現在由呼叫端依畫面模式給對的顏色,這裡無條件填。
++	for (int16 cy = 0; cy < 16; cy++) {
++		byte *rowPtr = _displayScreen + (y + cy) * _displayScreenWidth + x;
++		for (int16 cx = 0; cx < 16; cx++)
++			rowPtr[cx] = background;
 +	}
 +	byte *dest = _displayScreen + y * _displayScreenWidth + x;
 +	_chtFont->drawBig5Char(dest, big5, 16, 16, _displayScreenWidth, foreground, background, false, 1);
@@ -337,7 +337,7 @@ index 1bb1d202..7c125840 100644
  	int16 x = column;
  	int16 y = row;
 diff --git a/engines/agi/graphics.h b/engines/agi/graphics.h
-index 320019fa..dccd1ff7 100644
+index 320019fa..9a750344 100644
 --- a/engines/agi/graphics.h
 +++ b/engines/agi/graphics.h
 @@ -24,6 +24,13 @@
@@ -383,8 +383,8 @@ index 320019fa..dccd1ff7 100644
 +	bool chtLangOn() const { return _chtLangOn; }
 +	void toggleChtLang() { _chtLangOn = !_chtLangOn; }   // F8 切換中/英
 +	const char *getChtTranslation(const char *english) const;
-+	void drawBig5Character(int16 row, int16 column, uint16 big5, byte foreground, byte background, bool forceFill = false);
-+	void drawBig5CharacterOnDisplay(int16 x, int16 y, uint16 big5, byte foreground, byte background, bool forceFill = false);
++	void drawBig5Character(int16 row, int16 column, uint16 big5, byte foreground, byte background);
++	void drawBig5CharacterOnDisplay(int16 x, int16 y, uint16 big5, byte foreground, byte background);
 +	void loadChtTitleOverlay();           // 載入 kq1_title.ovl（若存在）
 +	void drawChtTitleOverlay(int16 picNr); // 若 picNr 為標題 pic 則疊繪中文標題
 +
@@ -428,33 +428,91 @@ index 3c19773e..30c44ef8 100644
  			if (event.kbd.keycode >= Common::KEYCODE_KP0 && event.kbd.keycode <= Common::KEYCODE_KP9) {
  				if (!(event.kbd.flags & Common::KBD_NUM)) {
 diff --git a/engines/agi/menu.cpp b/engines/agi/menu.cpp
-index 922c2b86..7a06e2b0 100644
+index 922c2b86..93988146 100644
 --- a/engines/agi/menu.cpp
 +++ b/engines/agi/menu.cpp
-@@ -424,7 +424,11 @@ void GfxMenu::drawMenuName(int16 menuNr, bool inverted) {
- 	if (menuEntry->itemCount == 0)
- 		disabledLook = true;
+@@ -29,6 +29,38 @@
  
-+	// 繁體中文化：選單裡 background==0 代表黑底（不是透明），中文字格要填底，
-+	// 否則反白項的白字會落在 drawBox 鋪的白底上而整片消失。
-+	_text->setMenuTextActive(true);
- 	_text->displayText(menuEntry->text.c_str(), disabledLook);
-+	_text->setMenuTextActive(false);
- }
+ namespace Agi {
  
- void GfxMenu::drawItemName(int16 itemNr, bool inverted) {
-@@ -451,7 +455,11 @@ void GfxMenu::drawItemName(int16 itemNr, bool inverted) {
- 	if (itemEntry->enabled == false)
- 		disabledLook = true;
++// 繁體中文化：選單文字的顯示欄寬。Big5（lead 0x81-0xFE + trail）一個字佔一格＝1 欄，
++// 其餘每 byte 1 欄。選單的欄位起點、盒寬、關閉時的還原區塊全部照 textLen 算，所以
++// textLen 必須是「畫出來佔幾欄」，不是 byte 數。
++static int16 chtDisplayLen(const Common::String &text) {
++	int16 cols = 0;
++	uint32 i = 0;
++	while (i < text.size()) {
++		const byte c = (byte)text[i];
++		if (c >= 0x81 && c <= 0xFE && i + 1 < text.size())
++			i += 2;
++		else
++			i++;
++		cols++;
++	}
++	return cols;
++}
++
++// 前 maxCols 欄佔幾個 byte（不會把 Big5 字切成一半）。
++static uint32 chtBytesForCols(const Common::String &text, int16 maxCols) {
++	uint32 i = 0;
++	int16 cols = 0;
++	while (i < text.size() && cols < maxCols) {
++		const byte c = (byte)text[i];
++		if (c >= 0x81 && c <= 0xFE && i + 1 < text.size())
++			i += 2;
++		else
++			i++;
++		cols++;
++	}
++	return i;
++}
++
+ GfxMenu::GfxMenu(AgiEngine *vm, GfxMgr *gfx, PictureMgr *picture, TextMgr *text) {
+ 	_vm = vm;
+ 	_gfx = gfx;
+@@ -82,7 +114,11 @@ void GfxMenu::addMenu(const char *menuText) {
+ 		if (menuEntry->text == " Special ")
+ 			menuEntry->text = "Special ";
  
-+	// 繁體中文化：選單裡 background==0 代表黑底（不是透明），中文字格要填底，
-+	// 否則反白項的白字會落在 drawBox 鋪的白底上而整片消失。
-+	_text->setMenuTextActive(true);
- 	_text->displayText(itemEntry->text.c_str(), disabledLook);
-+	_text->setMenuTextActive(false);
- }
+-	menuEntry->textLen = menuEntry->text.size();
++	// 繁體中文化：在「加入選單時」就換成中譯，長度也改算顯示欄寬。若只在繪製時才換中文，
++	// 這裡算出的 column／maxItemTextLen 仍是英文的 byte 長度，畫出來的中文寬度對不上，
++	// 關選單時 render_Block 蓋不到畫出去的部分 → 畫面殘留（GitHub issue #1）。
++	menuEntry->text = Common::String(_gfx->getChtTranslation(menuEntry->text.c_str()));
++	menuEntry->textLen = chtDisplayLen(menuEntry->text);
  
- void GfxMenu::drawMenu(int16 selectedMenuNr, int16 selectedMenuItemNr) {
+ 	if (!_vm->isLanguageRTL()) {
+ 		// Cut menu name in case menu bar is full
+@@ -90,10 +126,11 @@ void GfxMenu::addMenu(const char *menuText) {
+ 		// Original interpreter had graphical issues in this case
+ 		// TODO: this whole code needs to get reworked anyway to support different types of menu bars depending on platform
+ 		curColumnEnd += menuEntry->textLen;
+-		while ((menuEntry->textLen) && (curColumnEnd > 40)) {
+-			menuEntry->text.deleteLastChar();
+-			menuEntry->textLen--;
+-			curColumnEnd--;
++		if (curColumnEnd > 40) {
++			// 繁體中文化：以顯示欄為單位截斷（原本逐 byte 刪，會把 Big5 字砍成半個變亂碼）
++			const int16 keepCols = menuEntry->textLen - (curColumnEnd - 40);
++			menuEntry->text.erase(chtBytesForCols(menuEntry->text, MAX<int16>(keepCols, 0)));
++			menuEntry->textLen = chtDisplayLen(menuEntry->text);
+ 		}
+ 	}
+ 
+@@ -130,7 +167,12 @@ void GfxMenu::addMenuItem(const char *menuItemText, uint16 controllerSlot) {
+ 
+ 	menuItemEntry->enabled = true;
+ 	menuItemEntry->text = menuItemText;
+-	menuItemEntry->textLen = menuItemEntry->text.size();
++	// 繁體中文化：同 addMenu()，加入時就換中譯並改算顯示欄寬。
++	// 這裡的 textLen 會決定 maxItemTextLen → 選單盒寬與關閉時的還原區塊；
++	// 例：「Quit  <Alt-Z>」14 欄，中譯「離開       <Alt-Z>」17 欄，照英文算就會有 3 欄
++	// 畫在盒外還原不到（issue #1 畫面殘留的「Z>」）。
++	menuItemEntry->text = Common::String(_gfx->getChtTranslation(menuItemEntry->text.c_str()));
++	menuItemEntry->textLen = chtDisplayLen(menuItemEntry->text);
+ 	menuItemEntry->controllerSlot = controllerSlot;
+ 
+ 	// Original interpreter on PC used the length of the first item for drawing
 diff --git a/engines/agi/op_cmd.cpp b/engines/agi/op_cmd.cpp
 index 6d27452b..cb018272 100644
 --- a/engines/agi/op_cmd.cpp
@@ -534,7 +592,7 @@ index 40cd61af..90a816d0 100644
  	switch (_vm->_renderMode) {
  	case Common::kRenderAmiga:
 diff --git a/engines/agi/text.cpp b/engines/agi/text.cpp
-index cc02816b..ff83d2ab 100644
+index cc02816b..cfce3093 100644
 --- a/engines/agi/text.cpp
 +++ b/engines/agi/text.cpp
 @@ -338,6 +338,10 @@ Common::String rightAlign(Common::String line, va_list args) {
@@ -548,7 +606,7 @@ index cc02816b..ff83d2ab 100644
  	Common::String textString;
  	if (_vm->isLanguageRTL()) {
  		textString = textPtr;
-@@ -357,11 +361,44 @@ void TextMgr::displayText(const char *textPtr, bool disabledLook) {
+@@ -357,11 +361,50 @@ void TextMgr::displayText(const char *textPtr, bool disabledLook) {
  		if (!curCharacter)
  			break;
  
@@ -570,16 +628,22 @@ index cc02816b..ff83d2ab 100644
 +	TextPos_Struct charCurPos;
 +	charPos_Get(&charCurPos);
 +
-+	// 色值用「原始意圖色」：訊息框=黑字(0)/白底(15)、標題名單=白字(15)/黑底(0)。
-+	// 不用 combinedBackground —— 那含 invert 位(0x08)，是給 8x8 點陣字 XOR 反白用的，
-+	// Big5 直接拿來填會變灰底。
++	// 取「原始意圖色」，兩種模式取的欄位不同（charAttrib_Set() 對兩種模式的填法本來就不一樣）：
++	//  - 圖形模式：用 foreground/background。combined* 帶著 invert 位(0x08)，那是給 8x8 點陣字
++	//    XOR 反白用的，Big5 直接拿去填會變灰底。
++	//  - 文字模式（物品欄、說明頁等整頁文字畫面）：calculateTextBackground() 在非 gfxMode 時
++	//    一律回 0，background 不帶資訊，真正的顏色在 combined* 裡。拿 background=0 去填，
++	//    整頁白底會變成一條條黑棒、字也看不見。
 +	//
-+	// _menuTextActive：選單繪製期間強制填底。選單反白項是 charAttrib_Set(15, 0)，
-+	// background 收斂成 0；平常 background==0 代表「不要填底、疊在既有畫面上」，
-+	// 但在選單裡它代表「黑底」—— drawMenu 先用 drawBox 鋪了白底，不填的話白字就落在
-+	// 白底上整片消失（只剩 ASCII 快捷鍵可見，因為 ASCII 走 drawCharacter，它連字格背景
-+	// 一起畫）。旗標只在 GfxMenu 繪製期間為真，道具欄／對白框／標題名單都不受影響。
-+	_gfx->drawBig5Character(charCurPos.row, charCurPos.column, big5, _textAttrib.foreground, _textAttrib.background, _menuTextActive);
++	// 這段取代了原本的 _menuTextActive 旗標:那個旗標只讓選單繪製期間強制填底,補得到選單、
++	// 補不到同樣是反白(前景 15/背景 0)的物品欄選取項——實測三件道具裡被選取的那件整個隱形。
++	byte fg = _textAttrib.foreground;
++	byte bg = _textAttrib.background;
++	if (!_vm->_game.gfxMode) {
++		fg = _textAttrib.combinedForeground;
++		bg = _textAttrib.combinedBackground;
++	}
++	_gfx->drawBig5Character(charCurPos.row, charCurPos.column, big5, fg, bg);
 +
 +	// 640x400 hi-res：字格寬=16px，一個 16x16 中文字佔 1 格
 +	charCurPos.column += 1;
@@ -593,7 +657,7 @@ index cc02816b..ff83d2ab 100644
  void TextMgr::displayCharacter(byte character, bool disabledLook) {
  	TextPos_Struct charCurPos;
  
-@@ -426,7 +463,18 @@ void TextMgr::printAt(int16 textNr, int16 textPos_Row, int16 textPos_Column, int
+@@ -426,7 +469,18 @@ void TextMgr::printAt(int16 textNr, int16 textPos_Row, int16 textPos_Column, int
  }
  
  bool TextMgr::messageBox(const char *textPtr) {
@@ -612,7 +676,7 @@ index cc02816b..ff83d2ab 100644
  
  	if (_vm->getFlag(VM_FLAG_OUTPUT_MODE)) {
  		// non-blocking window
-@@ -630,6 +678,19 @@ void TextMgr::closeWindow(bool ttsStopSpeech) {
+@@ -630,6 +684,19 @@ void TextMgr::closeWindow(bool ttsStopSpeech) {
  
  	_messageState.dialogue_Open = false;
  	_messageState.window_Active = false;
@@ -632,7 +696,7 @@ index cc02816b..ff83d2ab 100644
  }
  
  void TextMgr::statusRow_Set(int16 row) {
-@@ -1179,6 +1240,28 @@ void TextMgr::stringRememberForAutoComplete(bool entered) {
+@@ -1179,6 +1246,28 @@ void TextMgr::stringRememberForAutoComplete(bool entered) {
   * @param originalText  String to wrap.
   * @param maxWidth      Length of line.
   */
@@ -661,7 +725,7 @@ index cc02816b..ff83d2ab 100644
  char *TextMgr::stringWordWrap(const char *originalText, int16 maxWidth, int16 *calculatedWidthPtr, int16 *calculatedHeightPtr) {
  	static char resultWrappedBuffer[2000];
  	int16 boxWidth = 0;
-@@ -1214,10 +1297,11 @@ char *TextMgr::stringWordWrap(const char *originalText, int16 maxWidth, int16 *c
+@@ -1214,10 +1303,11 @@ char *TextMgr::stringWordWrap(const char *originalText, int16 maxWidth, int16 *c
  		}
  		byte wordEndChar = originalText[curReadPos];
  
@@ -675,7 +739,7 @@ index cc02816b..ff83d2ab 100644
  			// Not enough space left
  
  			// If first character right after the new line is a space, skip over it
-@@ -1225,13 +1309,15 @@ char *TextMgr::stringWordWrap(const char *originalText, int16 maxWidth, int16 *c
+@@ -1225,13 +1315,15 @@ char *TextMgr::stringWordWrap(const char *originalText, int16 maxWidth, int16 *c
  				if (originalText[wordStartPos] == ' ') {
  					wordStartPos++;
  					wordLen--;
@@ -695,7 +759,7 @@ index cc02816b..ff83d2ab 100644
  			}
  
  			// Add new line
-@@ -1246,10 +1332,10 @@ char *TextMgr::stringWordWrap(const char *originalText, int16 maxWidth, int16 *c
+@@ -1246,10 +1338,10 @@ char *TextMgr::stringWordWrap(const char *originalText, int16 maxWidth, int16 *c
  				break;
  		}
  
@@ -709,7 +773,7 @@ index cc02816b..ff83d2ab 100644
  		curWritePos += wordLen;
  
  		if (wordEndChar == 0x0A) {
-@@ -1309,6 +1395,23 @@ char *TextMgr::stringPrintf(const char *originalText) {
+@@ -1309,6 +1401,23 @@ char *TextMgr::stringPrintf(const char *originalText) {
  	debugC(3, kDebugLevelText, "logic %d, '%s'", _vm->_game.curLogicNr, originalText);
  
  	while (*originalText) {
@@ -733,7 +797,7 @@ index cc02816b..ff83d2ab 100644
  		switch (*originalText) {
  		case '%':
  			originalText++;
-@@ -1344,7 +1447,10 @@ char *TextMgr::stringPrintf(const char *originalText) {
+@@ -1344,7 +1453,10 @@ char *TextMgr::stringPrintf(const char *originalText) {
  				break;
  			case 'g':
  				i = strtoul(originalText, nullptr, 10) - 1;
@@ -745,7 +809,7 @@ index cc02816b..ff83d2ab 100644
  				break;
  			case 'w':
  				i = strtoul(originalText, nullptr, 10) - 1;
-@@ -1356,8 +1462,12 @@ char *TextMgr::stringPrintf(const char *originalText) {
+@@ -1356,8 +1468,12 @@ char *TextMgr::stringPrintf(const char *originalText) {
  				break;
  			case 'm':
  				i = strtoul(originalText, nullptr, 10) - 1;
@@ -760,28 +824,10 @@ index cc02816b..ff83d2ab 100644
  			default:
  				break;
 diff --git a/engines/agi/text.h b/engines/agi/text.h
-index 54d61530..7b49b9fb 100644
+index 54d61530..b4d14380 100644
 --- a/engines/agi/text.h
 +++ b/engines/agi/text.h
-@@ -91,6 +91,7 @@ public:
- 	TextPos_Struct _textPosArray[TEXTPOSARRAY_MAX];
- 
- 	TextAttrib_Struct _textAttrib;
-+	bool _menuTextActive = false;
- 	int16             _textAttribArrayCount;
- 	TextAttrib_Struct _textAttribArray[TEXTATTRIBARRAY_MAX];
- 
-@@ -115,6 +116,9 @@ public:
- 	void charAttrib_Set(byte foreground, byte background);
- 	byte charAttrib_GetForeground();
- 	byte charAttrib_GetBackground();
-+	// 繁體中文化：選單繪製期間，中文字格一律填底（見 displayBig5Character）。
-+	void setMenuTextActive(bool active) { _menuTextActive = active; }
-+
- 	void charAttrib_Push();
- 	void charAttrib_Pop();
- 	byte calculateTextBackground(byte background);
-@@ -123,6 +127,7 @@ public:
+@@ -123,6 +123,7 @@ public:
  	void displayAdjustRTL(int16 textRow, int16 textColumn, char *text, int16 calculatedWidth);
  	void displayText(const char *textPtr, bool disabledLook = false);
  	void displayCharacter(byte character, bool disabledLook = false);
@@ -789,7 +835,7 @@ index 54d61530..7b49b9fb 100644
  
  	void displayTextInsideWindow(const char *textPtr, int16 windowRow, int16 windowColumn);
  
-@@ -134,6 +139,14 @@ public:
+@@ -134,6 +135,14 @@ public:
  	bool messageBox(const char *textPtr);
  	void messageBox_KeyPress(uint16 newKey);
  
