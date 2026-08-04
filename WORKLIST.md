@@ -166,3 +166,9 @@ KQ2 的 GitHub issue #1 修完後回頭比對 KQ1,發現兩件事:一件是**旗
   重複包裝與刪內建字型,與 KQ2 的「單一擁有者」做法涵蓋同樣的路徑,不重複改);
   macOS 啟動器(KQ1 的「路徑對不上也重寫 + 留 .bak」比 KQ2 版更細,保留);
   issue #2 的 `gui_saveload_chooser=list` 迴避設定(SCI 存檔崩潰成因未定,**不動**)。
+
+- [x] **Release v1.4 上線**:三平台 patch 四檔;dist-all/ 三平台 full 同步重打包。
+  驗收:新增 `tools/verify_packages.sh`(移植自 KQ2/KQ3,含正對照 selfcheck)六包 12/12 PASS
+  ——**移植時第一版把 macOS full 的遊戲路徑照抄成 `game/` 而誤報缺件,KQ1 用的是 `kq1-game/`**
+  (檢查腳本自己抓出來的,正是它該擋的東西)。另跑:出貨 AppImage 實跑(選單正確、乾淨離開)、
+  Windows patch 包 wine 實跑、macOS artifact 的 headSha 與本地 HEAD 比對一致。
