@@ -59,6 +59,17 @@ public:
 	 */
 	static ChtGuiFont *load(const Common::Path &filename, const Graphics::Font *base);
 
+	/**
+	 * Is @p font one of our wrappers?
+	 *
+	 * ThemeEngine hands a font back out of FontMan's cache on the second and any
+	 * later request for the same name, so a wrapper installed earlier comes back
+	 * around. It must not be wrapped a second time (both wrappers would then own
+	 * and delete the same base font) nor cast to BdfFont* the way the caller does
+	 * with a freshly loaded font. RTTI is off in ScummVM, hence the registry.
+	 */
+	static bool isWrapper(const Graphics::Font *font);
+
 	~ChtGuiFont() override;
 
 	int getFontHeight() const override;

@@ -91,6 +91,9 @@ INI_TMPL="$STAGE/extra/scummvm.ini.default"
   # 還沒生效 —— 少了這行,啟動器清單裡的中文遊戲名會變成一排方塊。
   echo "extrapath=extra"
   echo "themepath=extra"
+  # 存檔/讀檔一律用清單式介面。縮圖格狀介面(SaveLoadChooserGrid)在遊戲內開啟時崩過一次
+  # (GitHub issue #2),清單那條路徑不經過它。
+  echo "gui_saveload_chooser=list"
   echo
   echo "[kq1agi]"
   echo "description=國王密令 I（1984 AGI 原版）"

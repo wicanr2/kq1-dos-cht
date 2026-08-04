@@ -113,7 +113,7 @@ index 81421b47..930db287 100644
  uint16 AgiEngine::processAGIEvents() {
  	ScreenObjEntry *screenObjEgo = &_game.screenObjTable[SCREENOBJECTS_EGO_ENTRY];
 diff --git a/engines/agi/graphics.cpp b/engines/agi/graphics.cpp
-index 1bb1d202..77fee641 100644
+index 1bb1d202..e0246406 100644
 --- a/engines/agi/graphics.cpp
 +++ b/engines/agi/graphics.cpp
 @@ -26,6 +26,7 @@
@@ -150,7 +150,7 @@ index 1bb1d202..77fee641 100644
  	if (_font->isFontHires() || forceHires) {
  		// Upscaling enable
  		_upscaledHires = DISPLAY_UPSCALED_640x400;
-@@ -1157,6 +1170,147 @@ void GfxMgr::drawDisplayRectCGA(int16 x, int16 y, int16 width, int16 height, byt
+@@ -1157,6 +1170,159 @@ void GfxMgr::drawDisplayRectCGA(int16 x, int16 y, int16 width, int16 height, byt
  /**
   * Draw a character to the display screen using text row and column coordinates
   */
@@ -158,6 +158,18 @@ index 1bb1d202..77fee641 100644
 +static Common::String chtUnescape(const Common::String &in) {
 +	Common::String out;
 +	for (uint i = 0; i < in.size(); i++) {
++		// Big5 的第二個 byte 可以是 0x5C（「功」= A5 5C）。先整對抄過去，否則
++		// 「功」後面剛好接 n / t / \ 時那個 byte 會被當跳脫序列吃掉，整串錯位。
++		const byte lead = (byte)in[i];
++		if (lead >= 0xA1 && lead <= 0xF9 && i + 1 < in.size()) {
++			const byte trail = (byte)in[i + 1];
++			if ((trail >= 0x40 && trail <= 0x7E) || (trail >= 0xA1 && trail <= 0xFE)) {
++				out += in[i];
++				out += in[i + 1];
++				i++;
++				continue;
++			}
++		}
 +		if (in[i] == '\\' && i + 1 < in.size()) {
 +			char n = in[i + 1];
 +			if (n == 'n') { out += '\n'; i++; continue; }
@@ -468,7 +480,7 @@ index 40cd61af..90a816d0 100644
  	switch (_vm->_renderMode) {
  	case Common::kRenderAmiga:
 diff --git a/engines/agi/text.cpp b/engines/agi/text.cpp
-index cc02816b..d06fd0fb 100644
+index cc02816b..7dfe79a3 100644
 --- a/engines/agi/text.cpp
 +++ b/engines/agi/text.cpp
 @@ -338,6 +338,10 @@ Common::String rightAlign(Common::String line, va_list args) {
@@ -636,7 +648,31 @@ index cc02816b..d06fd0fb 100644
  		curWritePos += wordLen;
  
  		if (wordEndChar == 0x0A) {
-@@ -1344,7 +1423,10 @@ char *TextMgr::stringPrintf(const char *originalText) {
+@@ -1309,6 +1388,23 @@ char *TextMgr::stringPrintf(const char *originalText) {
+ 	debugC(3, kDebugLevelText, "logic %d, '%s'", _vm->_game.curLogicNr, originalText);
+ 
+ 	while (*originalText) {
++		// 繁體中文化：Big5 的第二個 byte 落在 0x40-0x7E 或 0xA1-0xFE，其中 0x5C 正好是
++		// 反斜線——「功」就是 A5 5C。下面的 case '\\' 會把它當跳脫字元吃掉，後面的
++		// byte 整串錯位：「沒能成功，希望」變成「沒能成央A希望」（A5 5C A1 41 少了 5C
++		// 之後被重新切成 A5 A1 = 央、41 = A）。中文開啟時先把雙位元組字整對照抄過去，
++		// 單位元組文字仍走原本的 % 與 \ 處理，行為不變。
++		if (_gfx->chtEnabled()) {
++			const byte lead = (byte)originalText[0];
++			if (lead >= 0xA1 && lead <= 0xF9) {
++				const byte trail = (byte)originalText[1];
++				if ((trail >= 0x40 && trail <= 0x7E) || (trail >= 0xA1 && trail <= 0xFE)) {
++					resultString += *originalText++;
++					resultString += *originalText++;
++					continue;
++				}
++			}
++		}
++
+ 		switch (*originalText) {
+ 		case '%':
+ 			originalText++;
+@@ -1344,7 +1440,10 @@ char *TextMgr::stringPrintf(const char *originalText) {
  				break;
  			case 'g':
  				i = strtoul(originalText, nullptr, 10) - 1;
@@ -648,7 +684,7 @@ index cc02816b..d06fd0fb 100644
  				break;
  			case 'w':
  				i = strtoul(originalText, nullptr, 10) - 1;
-@@ -1356,8 +1438,12 @@ char *TextMgr::stringPrintf(const char *originalText) {
+@@ -1356,8 +1455,12 @@ char *TextMgr::stringPrintf(const char *originalText) {
  				break;
  			case 'm':
  				i = strtoul(originalText, nullptr, 10) - 1;

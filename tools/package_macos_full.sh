@@ -40,7 +40,16 @@ CHT_DIR="$APP/Contents/Resources/cht-data"
 [ -f "$CHT_DIR/translation.tsv" ] || { echo "!! 來源 .app 缺中文資料（$CHT_DIR）" >&2; exit 1; }
 
 echo ">> 注入整個 game/（AGI 1984 + SCI 1990 兩版）"
-GAME_DST="$APP/Contents/Resources/game"
+# [HARD] 資料夾**不能**叫 "game"。ScummVM 的 macOS backend（backends/platform/sdl/macosx/
+# macosx_osys_misc.mm）看到 <bundle>/Contents/Resources/game 是資料夾，就會強制
+# command="auto-detect"、settings["path"]=那個資料夾，而且**不遞迴**。KQ1 兩個版本分別放在
+# game/agi_1984/KQ1 與 game/sci_1990/KQ1NEW 的子目錄裡，在上層那一階當然偵測不到 →
+#   WARNING: ScummVM could not find any game in .../Contents/Resources/game
+#   WARNING: Game data not found!
+# 然後以 kNoGameDataFoundError 結束，畫面連開都沒開（GitHub issue #1）。跟 --config、跟
+# 啟動器有沒有指定 target 都無關，改名就沒事。同理也別叫 "games"（那個名字會被 backend
+# 拿去自動加進啟動器清單）。
+GAME_DST="$APP/Contents/Resources/kq1-game"
 rm -rf "$GAME_DST"; mkdir -p "$GAME_DST"
 cp -R "$ROOT/game/." "$GAME_DST/"
 [ -f "$GAME_DST/agi_1984/KQ1/OBJECT" ] || echo "!! 警告：AGI 版遊戲檔看起來不完整" >&2
@@ -76,7 +85,7 @@ HERE="$(pwd)"
 APP="$HERE/ScummVM.app"
 BIN="$APP/Contents/MacOS/scummvm"
 EXTRA="$APP/Contents/Resources/cht-data"
-GAMEROOT="$APP/Contents/Resources/game"
+GAMEROOT="$APP/Contents/Resources/kq1-game"   # 不能叫 game，見打包腳本裡的說明
 CFG="$HERE/scummvm.ini"
 
 if [ ! -x "$BIN" ]; then
@@ -89,11 +98,18 @@ fi
 MT32LINE=""
 [ -f "$EXTRA/MT32_CONTROL.ROM" ] && MT32LINE="music_driver=mt32"
 
-if [ ! -f "$CFG" ]; then
+# 舊版的包把遊戲放在 Contents/Resources/game，設定檔裡留的是那條路徑；沿用舊 ini 會指向
+# 一個已經不存在的資料夾。玩家把整個資料夾搬家時也一樣（ini 裡是絕對路徑）。所以除了
+# 「檔案不存在」以外，「裡面的路徑跟現在對不上」也要重寫，舊檔留一份 .bak。
+if [ ! -f "$CFG" ] || ! grep -Fq "path=$GAMEROOT/sci_1990/KQ1NEW" "$CFG"; then
+[ -f "$CFG" ] && cp "$CFG" "$CFG.bak"
 cat > "$CFG" <<EOF
 [scummvm]
 gui_language=en
 extrapath=$EXTRA
+# 存檔/讀檔一律用清單式介面。縮圖格狀介面（SaveLoadChooserGrid）在遊戲內開啟時崩過一次
+# （GitHub issue #2），清單那條路徑不經過它。
+gui_saveload_chooser=list
 
 [kq1agi]
 description=國王密令 I（1984 AGI 原版）

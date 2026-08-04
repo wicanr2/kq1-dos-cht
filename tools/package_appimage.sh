@@ -114,6 +114,9 @@ cat > "$CFG" <<EOF
 # 還沒生效 —— 少了這行,啟動器清單裡的中文遊戲名會變成一排方塊。
 extrapath=$EXTRA
 themepath=$EXTRA
+# 存檔/讀檔一律用清單式介面。縮圖格狀介面(SaveLoadChooserGrid)在遊戲內開啟時崩過一次
+# (GitHub issue #2),清單那條路徑不經過它。
+gui_saveload_chooser=list
 
 [kq1agi]
 description=國王密令 I（1984 AGI 原版）

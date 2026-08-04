@@ -20,6 +20,7 @@
  */
 
 #include "common/config-manager.h"
+#include "graphics/fontman.h"
 #include "common/ptr.h"
 #include "common/file.h"
 #include "common/fs.h"
@@ -38,12 +39,48 @@ static const uint32 kChtFontMagic = MKTAG('C', 'H', 'T', 'G');
 // want to render, and the per-glyph size is used to walk the file.
 static const int kMaxGlyphDim = 64;
 
+// Every live wrapper, so isWrapper() can answer without RTTI. Fonts live for the
+// whole run and there are a handful of them, so a flat list is enough.
+static Common::Array<const Graphics::Font *> s_wrappers;
+
 ChtGuiFont::ChtGuiFont(const Graphics::Font *base, int w, int h)
 	: _base(base), _w(w), _h(h) {
+	s_wrappers.push_back(this);
+}
+
+// g_sysfont / g_sysfont_big / g_consolefont are static objects compiled into
+// ScummVM, and FontManager::getFontByName() hands them straight back for the
+// names the stock themes use ("clR6x12.bdf", "helvB12.bdf", "builtinConsole",
+// "fixed5x8.bdf") without ever consulting its own map. So the font handed to
+// us is one of those three far more often than not, and deleting it is exactly
+// what FontManager's own destructor goes out of its way not to do.
+static bool isBuiltinFont(const Graphics::Font *font) {
+	return font && (font == FontMan.getFontByUsage(Graphics::FontManager::kGUIFont) ||
+	                font == FontMan.getFontByUsage(Graphics::FontManager::kBigGUIFont) ||
+	                font == FontMan.getFontByUsage(Graphics::FontManager::kConsoleFont));
 }
 
 ChtGuiFont::~ChtGuiFont() {
-	delete _base;
+	for (uint i = 0; i < s_wrappers.size(); ++i) {
+		if (s_wrappers[i] == this) {
+			s_wrappers.remove_at(i);
+			break;
+		}
+	}
+	// Owning a font we must not free would turn every later GUI redraw into a
+	// use-after-free, and the second free into a double free.
+	if (!isBuiltinFont(_base))
+		delete _base;
+}
+
+bool ChtGuiFont::isWrapper(const Graphics::Font *font) {
+	if (!font)
+		return false;
+	for (uint i = 0; i < s_wrappers.size(); ++i) {
+		if (s_wrappers[i] == font)
+			return true;
+	}
+	return false;
 }
 
 // The GUI builds its fonts long before any engine starts, so the game's extra

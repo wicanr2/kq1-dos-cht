@@ -182,6 +182,50 @@ index fda7797e..b012b331 100644
  		else
  			_cachedFonts[fontId] = new GfxFontFromResource(_resMan, _screen, fontId);
  	}
+diff --git a/engines/sci/graphics/controls16.cpp b/engines/sci/graphics/controls16.cpp
+index aac0b3d3..43d8a7f7 100644
+--- a/engines/sci/graphics/controls16.cpp
++++ b/engines/sci/graphics/controls16.cpp
+@@ -392,15 +392,25 @@ void GfxControls16::kernelDrawButton(Common::Rect rect, reg_t obj, const char *t
+ void GfxControls16::kernelDrawText(Common::Rect rect, reg_t obj, const char *text, uint16 languageSplitter, int16 fontId, TextAlignment alignment, int16 style, bool hilite) {
+ 	g_sci->_tts->text(text);
+ 
++	// CHT: a control whose rect was measured for the English string needs to shift so the
++	// Chinese ends up where the English was (see GfxText16::chtControlOffset). The erase and
++	// the screen update have to cover both the old and the new position, or the part of the
++	// text that moved outside the original rect is drawn but never shown.
++	const int16 chtOffset = _text16->chtControlOffset(text, rect, fontId);
++	Common::Rect textRect(rect);
++	textRect.translate(chtOffset, 0);
++	Common::Rect updateRect(rect);
++	updateRect.extend(textRect);
++
+ 	if (!hilite) {
+-		rect.grow(1);
+-		_paint16->eraseRect(rect);
+-		rect.grow(-1);
++		updateRect.grow(1);
++		_paint16->eraseRect(updateRect);
++		updateRect.grow(-1);
+ 		if (!g_sci->hasMacFonts()) {
+ 			// The PC-98 versions set the 'show` argument here (unlike normal DOS versions).
+-			_text16->Box(text, languageSplitter, _screen->gfxDriver()->driverBasedTextRendering(), rect, alignment, fontId);
++			_text16->Box(text, languageSplitter, _screen->gfxDriver()->driverBasedTextRendering(), textRect, alignment, fontId);
+ 		} else {
+-			_text16->macDraw(text, rect, alignment, fontId, _text16->GetFontId(), 0);
++			_text16->macDraw(text, textRect, alignment, fontId, _text16->GetFontId(), 0);
+ 		}
+ 		if (style & SCI_CONTROLS_STYLE_SELECTED) {
+ 			_paint16->frameRect(rect);
+@@ -414,7 +424,7 @@ void GfxControls16::kernelDrawText(Common::Rect rect, reg_t obj, const char *tex
+ 		bool allowScreenUpdate = _screen->gfxDriver()->driverBasedTextRendering() ? false : true;
+ 
+ 		if (allowScreenUpdate && !getPicNotValid())
+-			_paint16->bitsShow(rect);
++			_paint16->bitsShow(updateRect);
+ 	} else {
+ 		// SCI0early used xor to invert button rectangles resulting in pink/white buttons
+ 		// All PC-98 targets (both SCI_VERSION_01 and SCI_VERSION_1_LATE) also use the
 diff --git a/engines/sci/graphics/menu.cpp b/engines/sci/graphics/menu.cpp
 index cdabf3bf..a20d3c91 100644
 --- a/engines/sci/graphics/menu.cpp
@@ -223,7 +267,7 @@ index cdabf3bf..a20d3c91 100644
  	// Draw the black line again
  	_paint16->fillRect(_ports->_menuLine, 1, 0);
 diff --git a/engines/sci/graphics/paint16.cpp b/engines/sci/graphics/paint16.cpp
-index 2e901e8d..3d32478e 100644
+index 2e901e8d..a2abbcf8 100644
 --- a/engines/sci/graphics/paint16.cpp
 +++ b/engines/sci/graphics/paint16.cpp
 @@ -19,6 +19,8 @@
@@ -383,6 +427,23 @@ index 2e901e8d..3d32478e 100644
  		if (getSciVersion() >= SCI_VERSION_1_1) {
  			if (!_screen->_picNotValidSci11) {
  				bitsShow(celRect);
+@@ -565,6 +685,16 @@ reg_t GfxPaint16::kernelDisplay(const char *text, uint16 languageSplitter, int a
+ 		rect.moveTo(_ports->getPort()->curLeft, _ports->getPort()->curTop);
+ 	}
+ 
++	// CHT: kDisplay sizes the box from the text and then drops it at the cursor position the
++	// script set, and that position was chosen for the English string. KQ1's title screen is
++	// the visible case: the four entries sit on blue plates painted into the picture, and the
++	// script moves to the x where the English label starts so it lands centred on its plate.
++	// "Credits" is 31px wide, 製作名單 is 64px, same left edge — the Chinese hangs off the
++	// right of the plate. Shifting the whole rect keeps the fill, the draw and the screen
++	// update in agreement; chtControlOffset() returns 0 for anything that is not a box built
++	// to fit its own text.
++	rect.translate(_text16->chtControlOffset(text, rect, -1), 0);
++
+ 	// Kawa's SCI11+
+ 	if (stroke)
+ 		rect.grow(1);
 diff --git a/engines/sci/graphics/paint16.h b/engines/sci/graphics/paint16.h
 index d2421f0b..616796a3 100644
 --- a/engines/sci/graphics/paint16.h
@@ -415,22 +476,21 @@ index d2421f0b..616796a3 100644
  
  } // End of namespace Sci
 diff --git a/engines/sci/graphics/ports.cpp b/engines/sci/graphics/ports.cpp
-index 1bfe51af..d2fd45c5 100644
+index 1bfe51af..b412631c 100644
 --- a/engines/sci/graphics/ports.cpp
 +++ b/engines/sci/graphics/ports.cpp
-@@ -62,9 +62,15 @@ void GfxPorts::init(bool usesOldGfxFunctions, GfxPaint16 *paint16, GfxText16 *te
+@@ -62,9 +62,14 @@ void GfxPorts::init(bool usesOldGfxFunctions, GfxPaint16 *paint16, GfxText16 *te
  	setPort(_menuPort);
  	_text16->SetFont(0);
  	_menuPort->rect = Common::Rect(0, 0, _screen->getScriptWidth(), _screen->getScriptHeight());
 -	_menuBarRect = Common::Rect(0, 0, _screen->getScriptWidth(), 9);
 -	_menuRect = Common::Rect(0, 0, _screen->getScriptWidth(), 10);
 -	_menuLine = Common::Rect(0, 9, _screen->getScriptWidth(), 10);
-+	// KQ1 note: KQ4 heightened this to 15 for ZH_TWN so Chinese menu titles would not be
-+	// clipped. Do NOT do that here — KQ1 draws a permanent status bar in the same rows, and it
-+	// fills only the stock 9 rows, so the extra rows stay black and the score line ends up
-+	// white-on-black with its top half cut off. Chinese menu text fits because the menu path
-+	// draws the compact glyph instead (see GfxFontChinese::useHiRes / drawCompact).
-+	const int16 menuBarH = 9;
++	// CHT: the stock bar is 9 rows, which is enough for the 8px English font and cuts the
++	// bottom half off every 15px Big5 glyph — menu titles and the status line both. The bar
++	// and the status line are filled from this same rect (GfxMenu::drawBar,
++	// GfxMenu::kernelDrawStatus), so heightening it moves the fill with the text.
++	const int16 menuBarH = (g_sci->getLanguage() == Common::ZH_TWN) ? 15 : 9;
 +	_menuBarRect = Common::Rect(0, 0, _screen->getScriptWidth(), menuBarH);
 +	_menuRect = Common::Rect(0, 0, _screen->getScriptWidth(), menuBarH + 1);
 +	_menuLine = Common::Rect(0, menuBarH, _screen->getScriptWidth(), menuBarH + 1);
@@ -495,7 +555,7 @@ index eaed025a..7bbdb648 100644
  
  	// pixel related code, in header so that it can be inlined for performance
 diff --git a/engines/sci/graphics/text16.cpp b/engines/sci/graphics/text16.cpp
-index 9e5647f3..908df001 100644
+index 9e5647f3..4717a3cd 100644
 --- a/engines/sci/graphics/text16.cpp
 +++ b/engines/sci/graphics/text16.cpp
 @@ -19,6 +19,9 @@
@@ -572,9 +632,43 @@ index 9e5647f3..908df001 100644
  	Width(str.c_str(), 0, str.size(), orgFontId, textWidth, textHeight, true);
  }
  
-@@ -442,6 +477,14 @@ void GfxText16::ShowString(const Common::String &str, GuiResourceId orgFontId, i
+@@ -441,7 +476,48 @@ void GfxText16::ShowString(const Common::String &str, GuiResourceId orgFontId, i
+ }
  #endif
  
++// CHT: how far a text control has to move so the Chinese sits where the English sat.
++//
++// KQ1's title screen hard-codes rect.left for each of its four entries and sizes the rect from
++// kTextSize, so the box always hugs the text: "Credits" is 31px wide starting at x=84, and the
++// blue plate behind it is part of the picture, centred on where those 31px land. 製作名單 is
++// 64px, keeps the same left edge, and so hangs 33px off the right of its plate.
++//
++// Only a rect that hugs its text is moved — a dialogue box is wider than the string inside it,
++// so the width test below leaves it alone. Vertical placement is left as it is: by this point
++// the port's font height is already the Chinese one, so the English height is not recoverable,
++// and a 15px glyph on a plate drawn for a 9px font overflows it whatever we do.
++int16 GfxText16::chtControlOffset(const char *text, const Common::Rect &rect, GuiResourceId fontId) {
++	if (g_sci->getLanguage() != Common::ZH_TWN || !text)
++		return 0;
++	const char *translated = g_sci->getChtTranslation(text);
++	if (!translated)
++		return 0;
++
++	GuiResourceId previousFontId = GetFontId();
++	if (fontId != -1)
++		SetFont(fontId);
++	int16 englishWidth = 0, chineseWidth = 0, unusedHeight = 0;
++	Width(text, 0, strlen(text), fontId, englishWidth, unusedHeight, true);
++	Width(translated, 0, strlen(translated), fontId, chineseWidth, unusedHeight, true);
++	SetFont(previousFontId);
++
++	if (getenv("SCI_CHT_DEBUG"))
++		warning("KQ1DBG chtControlOffset text='%s' rectW=%d enW=%d zhW=%d", text, rect.width(), englishWidth, chineseWidth);
++	if (englishWidth <= 0 || chineseWidth <= 0 || rect.width() != chineseWidth)
++		return 0;
++	return (englishWidth - chineseWidth) / 2;
++}
++
  void GfxText16::DrawString(const Common::String &str, GuiResourceId orgFontId, int16 orgPenColor) {
 +	// Traditional Chinese fan translation (content-keyed).
 +	if (g_sci->getLanguage() == Common::ZH_TWN) {
@@ -587,7 +681,7 @@ index 9e5647f3..908df001 100644
  	Draw(str.c_str(), 0, str.size(), orgFontId, orgPenColor);
  }
  
-@@ -569,6 +612,19 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
+@@ -569,6 +645,19 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
  	int16 textWidth, maxTextWidth, textHeight;
  	int16 offset = 0;
  	int16 hline = 0;
@@ -607,7 +701,7 @@ index 9e5647f3..908df001 100644
  	GuiResourceId previousFontId = GetFontId();
  	int16 previousPenColor = _ports->_curPort->penClr;
  	bool doubleByteMode = false;
-@@ -683,10 +739,18 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
+@@ -683,10 +772,18 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
  	_ports->penColor(previousPenColor);
  }
  
@@ -627,7 +721,7 @@ index 9e5647f3..908df001 100644
  	Common::String text;
  	if (!g_sci->isLanguageRTL())
  		text = textOrig;
-@@ -700,11 +764,19 @@ void GfxText16::DrawString(const Common::String &textOrig) {
+@@ -700,11 +797,19 @@ void GfxText16::DrawString(const Common::String &textOrig) {
  
  // we need to have a separate status drawing code
  //  In KQ4 the IV char is actually 0xA, which would otherwise get considered as linebreak and not printed
@@ -648,7 +742,7 @@ index 9e5647f3..908df001 100644
  	Common::String str;
  	if (!g_sci->isLanguageRTL())
  		str = strOrig;
-@@ -717,8 +789,18 @@ void GfxText16::DrawStatus(const Common::String &strOrig) {
+@@ -717,8 +822,18 @@ void GfxText16::DrawStatus(const Common::String &strOrig) {
  
  	rect.top = _ports->_curPort->curTop;
  	rect.bottom = rect.top + _ports->_curPort->fontHeight;
@@ -667,7 +761,7 @@ index 9e5647f3..908df001 100644
  		switch (curChar) {
  		case 0:
  			break;
-@@ -729,6 +811,7 @@ void GfxText16::DrawStatus(const Common::String &strOrig) {
+@@ -729,6 +844,7 @@ void GfxText16::DrawStatus(const Common::String &strOrig) {
  		}
  		}
  	}
@@ -675,6 +769,18 @@ index 9e5647f3..908df001 100644
  }
  
  // Check for Korean strings, and use font 1001 to render them
+diff --git a/engines/sci/graphics/text16.h b/engines/sci/graphics/text16.h
+index 5dbd4106..ac40f73a 100644
+--- a/engines/sci/graphics/text16.h
++++ b/engines/sci/graphics/text16.h
+@@ -60,6 +60,7 @@ public:
+ 	int16 GetLongest(const char *&text, int16 maxWidth, GuiResourceId orgFontId);
+ 	void Width(const char *text, int16 from, int16 len, GuiResourceId orgFontId, int16 &textWidth, int16 &textHeight, bool restoreFont);
+ 	void StringWidth(const Common::String &str, GuiResourceId orgFontId, int16 &textWidth, int16 &textHeight);
++	int16 chtControlOffset(const char *text, const Common::Rect &rect, GuiResourceId fontId);
+ #if 0
+ 	void ShowString(const Common::String &str, GuiResourceId orgFontId, int16 orgPenColor);
+ #endif
 diff --git a/engines/sci/graphics/view.cpp b/engines/sci/graphics/view.cpp
 index 3bc1bc7c..58d346d7 100644
 --- a/engines/sci/graphics/view.cpp
@@ -774,7 +880,7 @@ index 94d96a6e..b4c689eb 100644
  	graphics/fontsjis.o \
  	graphics/macfont.o \
 diff --git a/engines/sci/sci.cpp b/engines/sci/sci.cpp
-index b4d28b79..0710d021 100644
+index b4d28b79..9d326051 100644
 --- a/engines/sci/sci.cpp
 +++ b/engines/sci/sci.cpp
 @@ -19,6 +19,9 @@
@@ -850,7 +956,7 @@ index b4d28b79..0710d021 100644
  #ifdef ENABLE_SCI32
  	if (getSciVersion() >= SCI_VERSION_2) {
  		// SCI32 graphic objects creation
-@@ -831,7 +876,93 @@ const char *SciEngine::getGameIdStr() const {
+@@ -831,7 +876,105 @@ const char *SciEngine::getGameIdStr() const {
  	return _gameDescription->gameId;
  }
  
@@ -893,6 +999,18 @@ index b4d28b79..0710d021 100644
 +static Common::String unescapeCht(const Common::String &in) {
 +	Common::String out;
 +	for (uint i = 0; i < in.size(); ++i) {
++		// Big5 的第二個 byte 可以是 0x5C（「功」= A5 5C）。先整對抄過去，否則
++		// 「功」後面剛好接 n / t / \ 時那個 byte 會被當跳脫序列吃掉，整串錯位。
++		const byte lead = (byte)in[i];
++		if (lead >= 0xA1 && lead <= 0xF9 && i + 1 < in.size()) {
++			const byte trail = (byte)in[i + 1];
++			if ((trail >= 0x40 && trail <= 0x7E) || (trail >= 0xA1 && trail <= 0xFE)) {
++				out += in[i];
++				out += in[i + 1];
++				++i;
++				continue;
++			}
++		}
 +		if (in[i] == '\\' && i + 1 < in.size()) {
 +			char n = in[i + 1];
 +			if (n == 'n') { out += '\n'; ++i; continue; }
