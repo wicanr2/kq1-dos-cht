@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # 把 mingw 交叉編譯出的 scummvm.exe 打包成 Windows x86_64 版(patch 或 full)。
 # 同 package_appimage.sh 的理由:KQ1 有 AGI(1984)/SCI(1990)兩個可玩版本,不能用
-# --auto-detect 打死一款——包內放 scummvm.ini 預先定義 kq1agi/kq1sci 兩個 target,
-# .bat 啟動 `scummvm.exe --config=scummvm.ini`(不帶 target)開 Launcher 讓玩家選版本。
+# --auto-detect 打死一款——包內放 kq1-cht.ini 預先定義 kq1agi/kq1sci 兩個 target,
+# .bat 啟動 `scummvm.exe --config=kq1-cht.ini`(不帶 target)開 Launcher 讓玩家選版本。
 #
 # 用法: tools/package_windows.sh <patch|full>
 #   patch — 只含引擎 + 中文資料(dist-cht),不含遊戲、不附 MT-32 ROM → 給 GitHub Release
 #   full  — 引擎 + 中文資料 + 整個 game/(含 MT-32 ROM 如果本機有) → 只進本機 dist-all/
 #
 # 前置:先跑 mingw build 產出 build/mingw-tree/scummvm.exe。
-# Windows 解壓後的資料夾本身可寫、位置不像 AppImage 掛載點每次會變,所以 scummvm.ini
-# 只在「不存在時」產生一次即可(玩家後續在 ScummVM 裡調的設定會留著);若玩家把整個
-# 資料夾搬動,舊 ini 路徑會失效,需要手動砍掉 scummvm.ini 重開——這點寫進 README。
+# Windows 解壓後的資料夾本身可寫、位置不像 AppImage 掛載點每次會變,所以設定檔
+# (kq1-cht.ini)只在「不存在時」產生一次即可(玩家後續在 ScummVM 裡調的設定會留著);
+# 若玩家把整個資料夾搬動,舊路徑會失效,需要手動砍掉 kq1-cht.ini 重開——這點寫進 README。
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"          # /home/anr2/scummvm/king_quest1/workplace
 REPO_ROOT="$(cd "$ROOT/.." && pwd)"                # /home/anr2/scummvm/king_quest1
@@ -125,8 +125,12 @@ printf '%s\r\n' \
   '@echo off' \
   'cd /d "%~dp0"' \
   '' \
-  'rem First run: seed scummvm.ini from the UTF-8 template (Chinese game names live there).' \
-  'if not exist "scummvm.ini" copy /y "extra\scummvm.ini.default" "scummvm.ini" >nul' \
+  'rem First run: seed the config from the UTF-8 template (Chinese game names live there).' \
+  'rem The file is deliberately not called scummvm.ini: an ini left behind by an older' \
+  'rem package would otherwise be reused, and those predate gui_saveload_chooser=list.' \
+  'rem Refreshing one in place needs a findstr/goto dance that cmd and wine disagree about,' \
+  'rem so the new name does the same job with no branch at all.' \
+  'if not exist "kq1-cht.ini" copy /y "extra\scummvm.ini.default" "kq1-cht.ini" >nul' \
   '' \
   'if not exist "scummvm.exe" (' \
   '  echo scummvm.exe not found. Extract the whole ZIP first, then run this file.' \
@@ -134,7 +138,7 @@ printf '%s\r\n' \
   '  exit /b 1' \
   ')' \
   '' \
-  'scummvm.exe --config=scummvm.ini' \
+  'scummvm.exe --config=kq1-cht.ini' \
   'if errorlevel 1 (' \
   '  echo.' \
   '  echo ScummVM exited with an error. The message above may explain why.' \
@@ -148,7 +152,7 @@ if [ "$MODE" = "full" ]; then
   README_EXTRA_LINE="中文資料（translation.tsv、Big5 字型、標題疊圖、MT-32 ROM（若隨附））"
   README_GAME_LINE=$'  game\\                           遊戲本體（AGI 1984 + SCI 1990 兩版，已內嵌）\n'
   README_HOWTO=""
-  README_MT32="  已內附 ROM 時 scummvm.ini 會自動帶 music_driver=mt32；若想改用其他驅動，在 ScummVM 音效設定裡改。"
+  README_MT32="  已內附 ROM 時 kq1-cht.ini 會自動帶 music_driver=mt32；若想改用其他驅動，在 ScummVM 音效設定裡改。"
 else
   README_TITLE="patch 包（不含遊戲本體）"
   README_EXTRA_LINE="中文資料（translation.tsv、Big5 字型、標題疊圖）"
@@ -158,7 +162,7 @@ else
 （AGI 版指到含 OBJECT/WORDS.TOK/VOL.0 等檔案的資料夾；SCI 版指到含 RESOURCE.MAP/RESOURCE.001 的資料夾）即可。
 語言（SCI 版 language=tw）、中文資料路徑（extrapath）都已預先設定好，不需要另外調整。
 "
-  README_MT32="  本包未附 ROM（版權因素不隨 patch 散布）。自備 MT-32_CONTROL.ROM + MT32_PCM.ROM 放進 extra\\ 資料夾後刪掉 scummvm.ini 重開一次即可自動偵測。"
+  README_MT32="  本包未附 ROM（版權因素不隨 patch 散布）。自備 MT-32_CONTROL.ROM + MT32_PCM.ROM 放進 extra\\ 資料夾後刪掉 kq1-cht.ini 重開一次即可自動偵測。"
 fi
 
 # 開頭補 UTF-8 BOM：Windows 舊版記事本看到沒有 BOM 的 UTF-8 會當成 ANSI(CP950) 解讀，
@@ -175,7 +179,7 @@ cat >> "$STAGE/README.txt" <<TXT
        國王密令 I（1990 SCI 重製版）
 
   .bat 只做兩件事：切到自己所在的資料夾、第一次執行時把 extra\\scummvm.ini.default
-  複製成 scummvm.ini，然後啟動 scummvm.exe。若它閃一下就關掉，多半是 ZIP 沒有完整解開，
+  複製成 kq1-cht.ini，然後啟動 scummvm.exe。若它閃一下就關掉，多半是 ZIP 沒有完整解開，
   這時 .bat 會停下來顯示訊息（按任意鍵才關閉），照著訊息處理即可。
 
 內容物：
@@ -188,7 +192,7 @@ $README_HOWTO
 若要用 Roland MT-32 音源（推薦，音色遠優於 AdLib）：
 $README_MT32
 
-設定檔 scummvm.ini 裡的路徑全部是相對路徑，所以整個資料夾搬到任何位置都能直接用，
+設定檔 kq1-cht.ini 裡的路徑全部是相對路徑，所以整個資料夾搬到任何位置都能直接用，
 不需要刪掉重建。
 
 repo（patch-only，不含遊戲資源/ROM）：https://github.com/wicanr2/kq1-dos-cht
