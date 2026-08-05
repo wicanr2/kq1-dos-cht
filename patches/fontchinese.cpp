@@ -105,8 +105,14 @@ byte GfxFontChinese::getCharHeight(uint16 chr) {
 
 void GfxFontChinese::draw(uint16 chr, int16 top, int16 left, byte color, bool greyedOutput) {
 	// Single-byte: delegate to the original SCI font (keeps ASCII pixel-identical).
+	//
+	// 但要往下對齊。SCI 傳進來的 top 是「這一行的頂端」，中文 15 列、原字型只有 8-9 列，
+	// 兩邊都從頂端畫的話 ASCII 會浮在中文上方 6 列，像上標一樣（F1 說明視窗裡的
+	// ESC／Tab／Ctrl-C、狀態列的分數數字都看得出來）。差額補在上面，兩者底線就齊了。
 	if (chr <= 0xFF) {
-		_asciiFont->draw(chr, top, left, color, greyedOutput);
+		const int16 asciiHeight = _asciiFont->getHeight();
+		const int16 baselineFix = (_big5Height > asciiHeight) ? (_big5Height - asciiHeight) : 0;
+		_asciiFont->draw(chr, top + baselineFix, left, color, greyedOutput);
 		return;
 	}
 

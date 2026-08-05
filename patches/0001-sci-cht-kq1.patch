@@ -476,7 +476,7 @@ index d2421f0b..616796a3 100644
  
  } // End of namespace Sci
 diff --git a/engines/sci/graphics/ports.cpp b/engines/sci/graphics/ports.cpp
-index 1bfe51af..b412631c 100644
+index 1bfe51af..04bb492c 100644
 --- a/engines/sci/graphics/ports.cpp
 +++ b/engines/sci/graphics/ports.cpp
 @@ -62,9 +62,14 @@ void GfxPorts::init(bool usesOldGfxFunctions, GfxPaint16 *paint16, GfxText16 *te
@@ -497,6 +497,67 @@ index 1bfe51af..b412631c 100644
  
  	_wmgrPort = new Port(1);
  	_windowsById.resize(2);
+@@ -298,6 +303,20 @@ void GfxPorts::endUpdate(Window *wnd) {
+ 	setPort(oldPort);
+ }
+ 
++// CHT: 有標題列的視窗，標題列該多高。
++//
++// 原本三處各寫死 10（addWindow 往上長出標題列、drawWindow 畫分隔線與內容區起點），
++// 那是照 8px 英文字型訂的；Big5 是 15px，下緣會被內容區的 fillRect 蓋掉一截
++// （道具欄的「你身上帶著：」就是這樣缺一角）。
++//
++// 加高是安全的：腳本給 addWindow 的 rect 是**內容區**，標題列是引擎自己往上長的
++// （r.top -= 這個值），而 restoreRect 在沒有另外指定時就等於 dims，會跟著一起長。
++// 換句話說內容區一格都不會被擠掉，視窗只是往上多佔幾列；真的頂到畫面上緣時，
++// 既有的 clip 邏輯會把 dims 與 rect 一起往下移，內容依然完整。
++int16 GfxPorts::titleBarHeight() const {
++	return (g_sci->getLanguage() == Common::ZH_TWN) ? 16 : 10;
++}
++
+ Window *GfxPorts::addWindow(const Common::Rect &dims, const Common::Rect *restoreRect, const char *title, uint16 style, int16 priority, bool draw) {
+ 	// Find an unused window/port id
+ 	uint id = PORTS_FIRSTWINDOWID;
+@@ -370,7 +389,7 @@ Window *GfxPorts::addWindow(const Common::Rect &dims, const Common::Rect *restor
+ 	if ((style != _styleUser) && !(style & SCI_WINDOWMGR_STYLE_NOFRAME)) {
+ 		r.grow(1);
+ 		if (style & SCI_WINDOWMGR_STYLE_TITLE) {
+-			r.top -= 10;
++			r.top -= titleBarHeight();
+ 			r.bottom++;
+ 		}
+ 	}
+@@ -494,7 +513,7 @@ void GfxPorts::drawWindow(Window *pWnd) {
+ 			if (wndStyle & SCI_WINDOWMGR_STYLE_TITLE) {
+ 				if (getSciVersion() <= SCI_VERSION_0_LATE) {
+ 					// draw a black line between titlebar and actual window content for SCI0
+-					r.bottom = r.top + 10;
++					r.bottom = r.top + titleBarHeight();
+ 					_paint16->frameRect(r);
+ 				}
+ 				r.grow(-1);
+@@ -511,7 +530,7 @@ void GfxPorts::drawWindow(Window *pWnd) {
+ 
+ 				r.grow(+1);
+ 				r.bottom = pWnd->dims.bottom - 1;
+-				r.top += 9;
++				r.top += titleBarHeight() - 1;
+ 			}
+ 
+ 			r.grow(-1);
+diff --git a/engines/sci/graphics/ports.h b/engines/sci/graphics/ports.h
+index 7bbe8780..276b6f0e 100644
+--- a/engines/sci/graphics/ports.h
++++ b/engines/sci/graphics/ports.h
+@@ -108,6 +108,8 @@ public:
+ 	Window *_picWind;
+ 
+ 	Port *_menuPort;
++	int16 titleBarHeight() const;
++
+ 	Common::Rect _menuBarRect;
+ 	Common::Rect _menuRect;
+ 	Common::Rect _menuLine;
 diff --git a/engines/sci/graphics/screen.cpp b/engines/sci/graphics/screen.cpp
 index 308fa82c..449fb126 100644
 --- a/engines/sci/graphics/screen.cpp
@@ -552,7 +613,7 @@ index eaed025a..8d45dcf7 100644
  
  	// pixel related code, in header so that it can be inlined for performance
 diff --git a/engines/sci/graphics/text16.cpp b/engines/sci/graphics/text16.cpp
-index 9e5647f3..b1680efe 100644
+index 9e5647f3..c95255e2 100644
 --- a/engines/sci/graphics/text16.cpp
 +++ b/engines/sci/graphics/text16.cpp
 @@ -19,6 +19,9 @@
@@ -629,7 +690,7 @@ index 9e5647f3..b1680efe 100644
  	Width(str.c_str(), 0, str.size(), orgFontId, textWidth, textHeight, true);
  }
  
-@@ -441,7 +476,46 @@ void GfxText16::ShowString(const Common::String &str, GuiResourceId orgFontId, i
+@@ -441,11 +476,65 @@ void GfxText16::ShowString(const Common::String &str, GuiResourceId orgFontId, i
  }
  #endif
  
@@ -676,7 +737,26 @@ index 9e5647f3..b1680efe 100644
  	Draw(str.c_str(), 0, str.size(), orgFontId, orgPenColor);
  }
  
-@@ -569,6 +643,19 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
+ int16 GfxText16::Size(Common::Rect &rect, const char *text, uint16 languageSplitter, GuiResourceId fontId, int16 maxWidth) {
++	// CHT: 量測必須跟繪製看同一份文字。
++	//
++	// 這個函式是 script 決定「視窗要開多大」的依據（kDisplay/Print 先 Size 再 kNewWindow），
++	// 而 Box() 在畫的時候才把英文換成中文。兩邊看不同文字的後果不是排版難看而已：
++	// 行數照英文算、行高卻已經是中文的 15px，F1 說明視窗因此量成 210px 高 —— 超過畫面
++	// 可用高度，視窗被往上擠、文字畫到負座標，ScummVM 的 copyRectToScreen 直接 assert
++	// 當掉（英文版按 F1 完全正常，中文版必當）。
++	//
++	// 換成中文再量之後，行數與行高就一致了；譯文長度也才真的能影響視窗大小。
++	if (g_sci->getLanguage() == Common::ZH_TWN) {
++		const char *tr = g_sci->getChtTranslation(text);
++		if (tr)
++			text = tr;
++	}
++
+ 	GuiResourceId previousFontId = GetFontId();
+ 	int16 previousPenColor = _ports->_curPort->penClr;
+ 	int16 maxTextWidth = 0, textWidth;
+@@ -569,6 +658,19 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
  	int16 textWidth, maxTextWidth, textHeight;
  	int16 offset = 0;
  	int16 hline = 0;
@@ -696,7 +776,7 @@ index 9e5647f3..b1680efe 100644
  	GuiResourceId previousFontId = GetFontId();
  	int16 previousPenColor = _ports->_curPort->penClr;
  	bool doubleByteMode = false;
-@@ -683,10 +770,18 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
+@@ -683,10 +785,18 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
  	_ports->penColor(previousPenColor);
  }
  
@@ -716,7 +796,7 @@ index 9e5647f3..b1680efe 100644
  	Common::String text;
  	if (!g_sci->isLanguageRTL())
  		text = textOrig;
-@@ -700,11 +795,19 @@ void GfxText16::DrawString(const Common::String &textOrig) {
+@@ -700,11 +810,19 @@ void GfxText16::DrawString(const Common::String &textOrig) {
  
  // we need to have a separate status drawing code
  //  In KQ4 the IV char is actually 0xA, which would otherwise get considered as linebreak and not printed
@@ -737,7 +817,7 @@ index 9e5647f3..b1680efe 100644
  	Common::String str;
  	if (!g_sci->isLanguageRTL())
  		str = strOrig;
-@@ -719,6 +822,13 @@ void GfxText16::DrawStatus(const Common::String &strOrig) {
+@@ -719,6 +837,13 @@ void GfxText16::DrawStatus(const Common::String &strOrig) {
  	rect.bottom = rect.top + _ports->_curPort->fontHeight;
  	while (textLen--) {
  		uint16 curChar = *text++;
