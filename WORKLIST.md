@@ -172,3 +172,13 @@ KQ2 的 GitHub issue #1 修完後回頭比對 KQ1,發現兩件事:一件是**旗
   ——**移植時第一版把 macOS full 的遊戲路徑照抄成 `game/` 而誤報缺件,KQ1 用的是 `kq1-game/`**
   (檢查腳本自己抓出來的,正是它該擋的東西)。另跑:出貨 AppImage 實跑(選單正確、乾淨離開)、
   Windows patch 包 wine 實跑、macOS artifact 的 headSha 與本地 HEAD 比對一致。
+
+- **[SCI 軌] 有標題列的視窗（道具欄）標題會被裁掉一部分**（2026-08-05 回報，未修）。
+  `ports.cpp drawWindow()` 的 SCI0 標題列寫死 `r.bottom = r.top + 10`，之後內容區從
+  `r.top += 9` 開始 —— 15px 的中文往下溢出的部分會被內容區的 fillRect 蓋掉。
+  加高標題列會把內容區往下擠，而視窗總高 `pWnd->dims` 是遊戲腳本依內容行數算好的、
+  在 `bitsSave` 之後才畫，動它有裁掉最後一行的風險。
+  **要修得先能重現**：那個視窗要身上有道具才會出現（空的道具欄走的是另一條
+  「你身上什麼也沒帶！」的對話框），headless 拿不到道具 —— `setobj <n> 255` 只讓道具欄
+  列出名字，遊戲的 `has()` 判斷仍是否定的；`runopcode show.obj <n>` 會讓引擎 segfault。
+  下次要修，先做一個「身上有道具」的存檔放進 repo 當測試素材。
