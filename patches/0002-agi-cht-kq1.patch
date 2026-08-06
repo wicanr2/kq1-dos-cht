@@ -1,5 +1,5 @@
 diff --git a/engines/agi/agi.cpp b/engines/agi/agi.cpp
-index 95d4ad40..4452f9f1 100644
+index 95d4ad40..b7372d09 100644
 --- a/engines/agi/agi.cpp
 +++ b/engines/agi/agi.cpp
 @@ -521,6 +521,11 @@ void AgiEngine::initialize() {
@@ -14,6 +14,15 @@ index 95d4ad40..4452f9f1 100644
  	_sound = new SoundMgr(this, _mixer);
  	_picture = new PictureMgr(this, _gfx);
  	_sprites = new SpritesMgr(this, _gfx);
+@@ -533,6 +538,8 @@ void AgiEngine::initialize() {
+ 
+ 	_text->init(_systemUI);
+ 
++	_text->chtSelfTestPrintf();   // 繁體中文化:cht_selftest=true 時跑譯文自檢(見 text.h)
++
+ 	_text->charAttrib_Set(15, 0);
+ 
+ 	if (getGameType() == GType_GAL) {
 diff --git a/engines/agi/agi.h b/engines/agi/agi.h
 index b3ced461..9e018279 100644
 --- a/engines/agi/agi.h
@@ -337,7 +346,7 @@ index 1bb1d202..f2e7b1e3 100644
  	int16 x = column;
  	int16 y = row;
 diff --git a/engines/agi/graphics.h b/engines/agi/graphics.h
-index 320019fa..9a750344 100644
+index 320019fa..f1c38459 100644
 --- a/engines/agi/graphics.h
 +++ b/engines/agi/graphics.h
 @@ -24,6 +24,13 @@
@@ -373,13 +382,15 @@ index 320019fa..9a750344 100644
  	uint8 _paletteGfxMode[256 * 3];
  	uint8 _paletteTextMode[256 * 3];
  
-@@ -69,6 +88,17 @@ private:
+@@ -69,6 +88,19 @@ private:
  public:
  	GfxMgr(AgiBase *vm, GfxFont *font);
  
 +	// 繁體中文化：載入 Big5 字型 + translation.tsv、查表替換、繪 16x16 中文字
 +	void loadChtResources();
 +	bool chtEnabled() const { return _chtEnabled; }
++	// 自檢用(TextMgr::chtSelfTestPrintf):拿到 unescape 後的整份譯文表
++	const Common::HashMap<Common::String, Common::String> &chtTranslations() const { return _chtTranslation; }
 +	bool chtLangOn() const { return _chtLangOn; }
 +	void toggleChtLang() { _chtLangOn = !_chtLangOn; }   // F8 切換中/英
 +	const char *getChtTranslation(const char *english) const;
@@ -592,7 +603,7 @@ index 40cd61af..90a816d0 100644
  	switch (_vm->_renderMode) {
  	case Common::kRenderAmiga:
 diff --git a/engines/agi/text.cpp b/engines/agi/text.cpp
-index cc02816b..cfce3093 100644
+index cc02816b..499a760a 100644
 --- a/engines/agi/text.cpp
 +++ b/engines/agi/text.cpp
 @@ -338,6 +338,10 @@ Common::String rightAlign(Common::String line, va_list args) {
@@ -823,8 +834,77 @@ index cc02816b..cfce3093 100644
  				break;
  			default:
  				break;
+@@ -1382,4 +1498,68 @@ char *TextMgr::stringPrintf(const char *originalText) {
+ 	return resultPrintfBuffer;
+ }
+ 
++// 抽出字串裡所有 Big5 字(lead 0x81-0xFE + trail)組成的序列,忽略單位元組字元。
++static Common::String chtBig5Sequence(const char *s) {
++	Common::String out;
++	for (const byte *p = (const byte *)s; *p; ) {
++		if (*p >= 0x81 && *p <= 0xFE && p[1]) {
++			out += (char)p[0];
++			out += (char)p[1];
++			p += 2;
++		} else {
++			p++;
++		}
++	}
++	return out;
++}
++
++// 這則譯文在「沒有 Big5 判定」的舊行為下會不會被改壞:只要有任何 Big5 字的
++// trail byte 是 0x5C 就會。自檢拿它當正對照——沒有這個數字,「不符 0 則」
++// 無法區分「修好了」與「測試根本沒測到東西」。
++static bool chtWouldBreakWithoutGuard(const char *s) {
++	for (const byte *p = (const byte *)s; *p; ) {
++		if (*p >= 0x81 && *p <= 0xFE && p[1]) {
++			if (p[1] == 0x5C)
++				return true;
++			p += 2;
++		} else {
++			p++;
++		}
++	}
++	return false;
++}
++
++// 繁體中文化自檢(見 text.h)。判定用「Big5 字序列有沒有被改動」,不是「輸出 == 輸入」:
++// AGI 訊息裡 '\\' 是真的跳脫字元,有些遊戲的譯文合法地含 `\|` 之類的序列(PQ1 的報紙
++// 畫面就用它當換行標記),那些經過 stringPrintf 本來就會變。拿整串比對會誤報;
++// 比對 Big5 序列則對這類跳脫免疫,又抓得到 trail byte 被吃掉造成的錯位。
++void TextMgr::chtSelfTestPrintf() {
++	if (!(ConfMan.hasKey("cht_selftest") && ConfMan.getBool("cht_selftest")))
++		return;
++
++	const Common::HashMap<Common::String, Common::String> &table = _gfx->chtTranslations();
++	int checked = 0, skipped = 0, failed = 0, atRisk = 0;
++
++	for (Common::HashMap<Common::String, Common::String>::const_iterator it = table.begin();
++	     it != table.end(); ++it) {
++		const Common::String &val = it->_value;
++		if (strchr(val.c_str(), '%') != nullptr) {
++			skipped++;   // 格式碼要遊戲狀態才展開得了
++			continue;
++		}
++		checked++;
++		if (chtWouldBreakWithoutGuard(val.c_str()))
++			atRisk++;
++		Common::String out(stringPrintf(val.c_str()));
++		if (chtBig5Sequence(out.c_str()) != chtBig5Sequence(val.c_str())) {
++			failed++;
++			if (failed <= 5)
++				debug("AGI-CHT-SELFTEST: 不符\n  in : %s\n  out: %s", val.c_str(), out.c_str());
++		}
++	}
++	debug("AGI-CHT-SELFTEST: 檢查 %d 則(跳過含 %% 的 %d 則);"
++	      "舊行為會壞 %d 則(正對照),目前 Big5 序列被改動 %d 則",
++	      checked, skipped, atRisk, failed);
++}
++
+ } // End of namespace Agi
 diff --git a/engines/agi/text.h b/engines/agi/text.h
-index 54d61530..b4d14380 100644
+index 54d61530..e44aebf2 100644
 --- a/engines/agi/text.h
 +++ b/engines/agi/text.h
 @@ -123,6 +123,7 @@ public:
@@ -850,3 +930,16 @@ index 54d61530..b4d14380 100644
  	bool _messageBoxCancelled;
  
  	void drawMessageBox(const char *textPtr, int16 forcedHeight = 0, int16 wantedWidth = 0, bool forcedWidth = false);
+@@ -210,6 +219,12 @@ public:
+ 
+ 	char *stringPrintf(const char *originalText);
+ 	char *stringWordWrap(const char *originalText, int16 maxWidth, int16 *calculatedWidthPtr = nullptr, int16 *calculatedHeightPtr = nullptr);
++
++	// 繁體中文化自檢:`cht_selftest=true` 時把每則譯文餵進 stringPrintf 走一遍,
++	// 檢查其中的 Big5 字序列有沒有被改掉。Big5 的 trail byte 可能落在 0x40-0x7E,
++	// 與 '\\'(0x5C) 撞碼,逐位元組掃描的地方會把它當跳脫字元吃掉。
++	// 玩家用不到,是回歸測試用的 pass/fail 訊號。
++	void chtSelfTestPrintf();
+ };
+ 
+ Common::String rightAlign(Common::String line, va_list args);
