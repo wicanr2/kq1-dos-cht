@@ -226,114 +226,8 @@ index aac0b3d3..43d8a7f7 100644
  	} else {
  		// SCI0early used xor to invert button rectangles resulting in pink/white buttons
  		// All PC-98 targets (both SCI_VERSION_01 and SCI_VERSION_1_LATE) also use the
-diff --git a/engines/sci/graphics/menu.cpp b/engines/sci/graphics/menu.cpp
-index cdabf3bf..57f949dd 100644
---- a/engines/sci/graphics/menu.cpp
-+++ b/engines/sci/graphics/menu.cpp
-@@ -368,6 +368,9 @@ void GfxMenu::drawBar() {
- 	else
- 		_ports->moveTo(_screen->getWidth() - 8, 1);
- 
-+	// CHT: draw menu titles via the low-res Chinese path so highlight-invert works (see
-+	// GfxScreen::setMenuTextActive).
-+	_screen->setMenuTextActive(true);
- 	listIterator = _list.begin();
- 	while (listIterator != listEnd) {
- 		GuiMenuEntry *listEntry = *listIterator;
-@@ -384,6 +387,7 @@ void GfxMenu::drawBar() {
- 
- 		listIterator++;
- 	}
-+	_screen->setMenuTextActive(false);
- }
- 
- // This helper calculates all text widths for all menus (only)
-@@ -676,6 +680,9 @@ void GfxMenu::drawMenu(uint16 oldMenuId, uint16 newMenuId) {
- 	else
- 		_menuRect.right -= 8;
- 	topPos = _menuRect.top + 1;
-+	// CHT: draw dropdown items via the low-res Chinese path so highlight-invert works
-+	// (see GfxScreen::setMenuTextActive). Reset after the loop below.
-+	_screen->setMenuTextActive(true);
- 	listItemIterator = _itemList.begin();
- 	while (listItemIterator != listItemEnd) {
- 		listItemEntry = *listItemIterator;
-@@ -708,6 +715,7 @@ void GfxMenu::drawMenu(uint16 oldMenuId, uint16 newMenuId) {
- 		listItemIterator++;
- 	}
- 	_ports->textGreyedOutput(false);
-+	_screen->setMenuTextActive(false);
- 
- 	// Draw the black line again
- 	_paint16->fillRect(_ports->_menuLine, 1, 0);
-@@ -1021,6 +1029,11 @@ GuiMenuItemEntry *GfxMenu::interactiveWithMouse() {
- }
- 
- void GfxMenu::kernelDrawStatus(const char *text, int16 colorPen, int16 colorBack) {
-+	// CHT: remember it so chtRestoreStatus() can put it back after a room change.
-+	_chtStatusText = text ? text : "";
-+	_chtStatusPen = colorPen;
-+	_chtStatusBack = colorBack;
-+
- 	Port *oldPort = _ports->setPort(_ports->_menuPort);
- 
- 	_paint16->fillRect(_ports->_menuBarRect, 1, colorBack);
-@@ -1045,6 +1058,27 @@ void GfxMenu::kernelDrawStatus(const char *text, int16 colorPen, int16 colorBack
- 	_ports->setPort(oldPort);
- }
- 
-+// CHT: put the status line back after something drew over its bottom rows.
-+//
-+// The bar the Chinese font needs is 15 script rows tall (ports.cpp), but the game's picture
-+// window starts at row 10 and every room picture paints rows 10-199. Whichever of the two
-+// runs last wins, and on a room change that is the picture — the score line kept its top
-+// two thirds and lost the rest (issue #1). There is no spare row anywhere: the screen is
-+// 200 rows and the game owns 190 of them, so a 15-row bar has to cost the picture its top
-+// five rows. Doing it here makes that cost constant instead of depending on draw order.
-+//
-+// Only restores a bar the game actually asked for: kernelDrawMenuBar(true) clears it via
-+// kernelDrawStatus("", 0, 0), which empties the cache, so a game that hides the status line
-+// (the title screen does) keeps its picture whole.
-+void GfxMenu::chtRestoreStatus() {
-+	if (g_sci->getLanguage() != Common::ZH_TWN || _chtStatusText.empty())
-+		return;
-+	// Copy first: kernelDrawStatus() assigns its argument back into _chtStatusText, and
-+	// assigning a Common::String from its own buffer can free that buffer mid-copy.
-+	const Common::String text(_chtStatusText);
-+	kernelDrawStatus(text.c_str(), _chtStatusPen, _chtStatusBack);
-+}
-+
- void GfxMenu::kernelDrawMenuBar(bool clear) {
- 	if (!clear) {
- 		Port *oldPort = _ports->setPort(_ports->_menuPort);
-diff --git a/engines/sci/graphics/menu.h b/engines/sci/graphics/menu.h
-index cf13f4d1..cacea090 100644
---- a/engines/sci/graphics/menu.h
-+++ b/engines/sci/graphics/menu.h
-@@ -93,6 +93,9 @@ public:
- 	void kernelDrawStatus(const char *text, int16 colorPen, int16 colorBack);
- 	void kernelDrawMenuBar(bool clear);
- 
-+	// CHT: re-draw the last status line the game asked for. See chtRestoreStatus() for why.
-+	void chtRestoreStatus();
-+
- private:
- 	GuiMenuItemEntry *findItem(uint16 menuId, uint16 itemId);
- 	void calculateMenuWidth();
-@@ -127,6 +130,11 @@ private:
- 	Common::Rect _menuRect;
- 
- 	bool _mouseOldState;
-+
-+	// CHT: last status line the game drew, so it can be put back after a picture wipes it.
-+	Common::String _chtStatusText;
-+	int16 _chtStatusPen = 0;
-+	int16 _chtStatusBack = 0;
- };
- 
- } // End of namespace Sci
 diff --git a/engines/sci/graphics/paint16.cpp b/engines/sci/graphics/paint16.cpp
-index 2e901e8d..66c4b9f4 100644
+index 2e901e8d..4f27216c 100644
 --- a/engines/sci/graphics/paint16.cpp
 +++ b/engines/sci/graphics/paint16.cpp
 @@ -19,6 +19,8 @@
@@ -345,15 +239,7 @@ index 2e901e8d..66c4b9f4 100644
  #include "sci/sci.h"
  #include "sci/engine/features.h"
  #include "sci/engine/state.h"
-@@ -29,6 +31,7 @@
- #include "sci/graphics/ports.h"
- #include "sci/graphics/paint16.h"
- #include "sci/graphics/animate.h"
-+#include "sci/graphics/menu.h"
- #include "sci/graphics/scifont.h"
- #include "sci/graphics/picture.h"
- #include "sci/graphics/view.h"
-@@ -47,7 +50,9 @@ GfxPaint16::GfxPaint16(ResourceManager *resMan, SegManager *segMan, GfxCache *ca
+@@ -47,7 +49,9 @@ GfxPaint16::GfxPaint16(ResourceManager *resMan, SegManager *segMan, GfxCache *ca
  	: _resMan(resMan), _segMan(segMan), _cache(cache), _ports(ports),
  	  _coordAdjuster(coordAdjuster), _screen(screen), _palette(palette),
  	  _transitions(transitions), _audio(audio), _EGAdrawingVisualize(false),
@@ -364,7 +250,7 @@ index 2e901e8d..66c4b9f4 100644
  
  	// _animate and _text16 will be initialized later on
  	_animate = nullptr;
-@@ -88,6 +93,8 @@ void GfxPaint16::debugSetEGAdrawingVisualize(bool state) {
+@@ -88,6 +92,8 @@ void GfxPaint16::debugSetEGAdrawingVisualize(bool state) {
  }
  
  void GfxPaint16::drawPicture(GuiResourceId pictureId, bool mirroredFlag, bool addToFlag, GuiResourceId paletteId) {
@@ -373,7 +259,7 @@ index 2e901e8d..66c4b9f4 100644
  	// Set up custom per-picture palette mod
  	doCustomPicPalette(_screen, pictureId);
  
-@@ -106,6 +113,121 @@ void GfxPaint16::drawPicture(GuiResourceId pictureId, bool mirroredFlag, bool ad
+@@ -106,6 +112,115 @@ void GfxPaint16::drawPicture(GuiResourceId pictureId, bool mirroredFlag, bool ad
  
  	// Reset custom per-picture palette mod
  	_screen->setCurPaletteMapValue(0);
@@ -398,12 +284,6 @@ index 2e901e8d..66c4b9f4 100644
 +		drawChtTitleOverlay();
 +	else if (chtTitleWasActive)
 +		clearChtTitleOverlay();
-+
-+	// CHT: the picture just painted over the bottom rows of the Chinese status bar — it is
-+	// 15 rows tall and the picture owns everything from row 10 down. Put it back (no-op when
-+	// the game has no status line up). See GfxMenu::chtRestoreStatus.
-+	if (g_sci->getLanguage() == Common::ZH_TWN && g_sci->_gfxMenu)
-+		g_sci->_gfxMenu->chtRestoreStatus();
 +
 +	// CHT tooling: dump each drawn pic (display buffer + palette) as PPM, to identify
 +	// which resource holds baked-art UI labels. Triggered by SCI_DUMP_PIC=<dir>.
@@ -495,7 +375,7 @@ index 2e901e8d..66c4b9f4 100644
  }
  
  // This one is the only one that updates screen!
-@@ -121,6 +243,11 @@ void GfxPaint16::drawCelAndShow(GuiResourceId viewId, int16 loopNo, int16 celNo,
+@@ -121,6 +236,11 @@ void GfxPaint16::drawCelAndShow(GuiResourceId viewId, int16 loopNo, int16 celNo,
  
  		drawCel(view, loopNo, celNo, celRect, priority, paletteNo, scaleX, scaleY, scaleSignal);
  
@@ -507,7 +387,26 @@ index 2e901e8d..66c4b9f4 100644
  		if (getSciVersion() >= SCI_VERSION_1_1) {
  			if (!_screen->_picNotValidSci11) {
  				bitsShow(celRect);
-@@ -565,6 +692,16 @@ reg_t GfxPaint16::kernelDisplay(const char *text, uint16 languageSplitter, int a
+@@ -194,6 +314,18 @@ void GfxPaint16::clearScreen(byte color) {
+ }
+ 
+ void GfxPaint16::invertRect(const Common::Rect &rect) {
++	// CHT: the menu highlight has to flip the display plane too, or it wipes the Chinese it is
++	// supposed to be highlighting. See GfxScreen::chtInvertRect.
++	if (g_sci->getLanguage() == Common::ZH_TWN && _screen->getDisplayWidth() > _screen->getWidth()) {
++		Common::Rect r = rect;
++		r.clip(_ports->_curPort->rect);
++		if (r.isEmpty())
++			return;
++		_ports->offsetRect(r);
++		_screen->chtInvertRect(r, _ports->_curPort->penClr, _ports->_curPort->backClr);
++		return;
++	}
++
+ 	int16 oldpenmode = _ports->_curPort->penMode;
+ 	_ports->_curPort->penMode = 2;
+ 	fillRect(rect, GFX_SCREEN_MASK_VISUAL, _ports->_curPort->penClr, _ports->_curPort->backClr);
+@@ -565,6 +697,16 @@ reg_t GfxPaint16::kernelDisplay(const char *text, uint16 languageSplitter, int a
  		rect.moveTo(_ports->getPort()->curLeft, _ports->getPort()->curTop);
  	}
  
@@ -556,108 +455,88 @@ index d2421f0b..616796a3 100644
  
  } // End of namespace Sci
 diff --git a/engines/sci/graphics/ports.cpp b/engines/sci/graphics/ports.cpp
-index 1bfe51af..04bb492c 100644
+index 1bfe51af..8f8568bb 100644
 --- a/engines/sci/graphics/ports.cpp
 +++ b/engines/sci/graphics/ports.cpp
-@@ -62,9 +62,14 @@ void GfxPorts::init(bool usesOldGfxFunctions, GfxPaint16 *paint16, GfxText16 *te
+@@ -62,6 +62,10 @@ void GfxPorts::init(bool usesOldGfxFunctions, GfxPaint16 *paint16, GfxText16 *te
  	setPort(_menuPort);
  	_text16->SetFont(0);
  	_menuPort->rect = Common::Rect(0, 0, _screen->getScriptWidth(), _screen->getScriptHeight());
--	_menuBarRect = Common::Rect(0, 0, _screen->getScriptWidth(), 9);
--	_menuRect = Common::Rect(0, 0, _screen->getScriptWidth(), 10);
--	_menuLine = Common::Rect(0, 9, _screen->getScriptWidth(), 10);
-+	// CHT: the stock bar is 9 rows, which is enough for the 8px English font and cuts the
-+	// bottom half off every 15px Big5 glyph — menu titles and the status line both. The bar
-+	// and the status line are filled from this same rect (GfxMenu::drawBar,
-+	// GfxMenu::kernelDrawStatus), so heightening it moves the fill with the text.
-+	const int16 menuBarH = (g_sci->getLanguage() == Common::ZH_TWN) ? 15 : 9;
-+	_menuBarRect = Common::Rect(0, 0, _screen->getScriptWidth(), menuBarH);
-+	_menuRect = Common::Rect(0, 0, _screen->getScriptWidth(), menuBarH + 1);
-+	_menuLine = Common::Rect(0, menuBarH, _screen->getScriptWidth(), menuBarH + 1);
- 
- 	_wmgrPort = new Port(1);
- 	_windowsById.resize(2);
-@@ -298,6 +303,20 @@ void GfxPorts::endUpdate(Window *wnd) {
- 	setPort(oldPort);
- }
- 
-+// CHT: 有標題列的視窗，標題列該多高。
-+//
-+// 原本三處各寫死 10（addWindow 往上長出標題列、drawWindow 畫分隔線與內容區起點），
-+// 那是照 8px 英文字型訂的；Big5 是 15px，下緣會被內容區的 fillRect 蓋掉一截
-+// （道具欄的「你身上帶著：」就是這樣缺一角）。
-+//
-+// 加高是安全的：腳本給 addWindow 的 rect 是**內容區**，標題列是引擎自己往上長的
-+// （r.top -= 這個值），而 restoreRect 在沒有另外指定時就等於 dims，會跟著一起長。
-+// 換句話說內容區一格都不會被擠掉，視窗只是往上多佔幾列；真的頂到畫面上緣時，
-+// 既有的 clip 邏輯會把 dims 與 rect 一起往下移，內容依然完整。
-+int16 GfxPorts::titleBarHeight() const {
-+	return (g_sci->getLanguage() == Common::ZH_TWN) ? 16 : 10;
-+}
-+
- Window *GfxPorts::addWindow(const Common::Rect &dims, const Common::Rect *restoreRect, const char *title, uint16 style, int16 priority, bool draw) {
- 	// Find an unused window/port id
- 	uint id = PORTS_FIRSTWINDOWID;
-@@ -370,7 +389,7 @@ Window *GfxPorts::addWindow(const Common::Rect &dims, const Common::Rect *restor
- 	if ((style != _styleUser) && !(style & SCI_WINDOWMGR_STYLE_NOFRAME)) {
- 		r.grow(1);
- 		if (style & SCI_WINDOWMGR_STYLE_TITLE) {
--			r.top -= 10;
-+			r.top -= titleBarHeight();
- 			r.bottom++;
- 		}
- 	}
-@@ -494,7 +513,7 @@ void GfxPorts::drawWindow(Window *pWnd) {
- 			if (wndStyle & SCI_WINDOWMGR_STYLE_TITLE) {
- 				if (getSciVersion() <= SCI_VERSION_0_LATE) {
- 					// draw a black line between titlebar and actual window content for SCI0
--					r.bottom = r.top + 10;
-+					r.bottom = r.top + titleBarHeight();
- 					_paint16->frameRect(r);
- 				}
- 				r.grow(-1);
-@@ -511,7 +530,7 @@ void GfxPorts::drawWindow(Window *pWnd) {
- 
- 				r.grow(+1);
- 				r.bottom = pWnd->dims.bottom - 1;
--				r.top += 9;
-+				r.top += titleBarHeight() - 1;
- 			}
- 
- 			r.grow(-1);
-diff --git a/engines/sci/graphics/ports.h b/engines/sci/graphics/ports.h
-index 7bbe8780..276b6f0e 100644
---- a/engines/sci/graphics/ports.h
-+++ b/engines/sci/graphics/ports.h
-@@ -108,6 +108,8 @@ public:
- 	Window *_picWind;
- 
- 	Port *_menuPort;
-+	int16 titleBarHeight() const;
-+
- 	Common::Rect _menuBarRect;
- 	Common::Rect _menuRect;
- 	Common::Rect _menuLine;
++	// CHT: left at the stock 9 rows. A Big5 glyph is 8 script rows on the upscaled display
++	// (GfxFontChinese), so it fits the bar the game drew for its 8px English font. Heightening
++	// it — which is what this did before 2026-08-07 — costs the picture its top rows, because
++	// the picture window starts at row 10 and repaints them on every room change.
+ 	_menuBarRect = Common::Rect(0, 0, _screen->getScriptWidth(), 9);
+ 	_menuRect = Common::Rect(0, 0, _screen->getScriptWidth(), 10);
+ 	_menuLine = Common::Rect(0, 9, _screen->getScriptWidth(), 10);
 diff --git a/engines/sci/graphics/screen.cpp b/engines/sci/graphics/screen.cpp
-index 308fa82c..449fb126 100644
+index 308fa82c..ecf32e41 100644
 --- a/engines/sci/graphics/screen.cpp
 +++ b/engines/sci/graphics/screen.cpp
-@@ -84,6 +84,13 @@ GfxScreen::GfxScreen(ResourceManager *resMan, Common::RenderMode renderMode) : _
+@@ -84,6 +84,21 @@ GfxScreen::GfxScreen(ResourceManager *resMan, Common::RenderMode renderMode) : _
  		}
  	}
  
-+	// CHT note (KQ1): other SCI0 fan translations (KQ4, LSL2) force GFX_SCREEN_UPSCALED_640x400
-+	// for ZH_TWN so Big5 glyphs can be drawn with real 24x24 detail. KQ1 must NOT do that: with
-+	// the forced upscale its permanent status bar renders wrong (left half turns black, text
-+	// clipped) — and it breaks the same way with plain English text, so it is the upscale
-+	// itself that KQ1's status-bar drawing does not survive, not anything Chinese. KQ1 renders
-+	// Chinese with the native 16x15 ETEN glyphs at 320x200 instead, which also matches how the
-+	// AGI track looks.
++	// CHT: run the whole SCI0 display at 640x400 so a Big5 glyph can be drawn at its native
++	// 16x15 pixels straight onto the display buffer (GfxFontChinese::drawHiRes). In script
++	// coordinates that glyph then measures 8x8 — exactly the cell the original 8px English
++	// font uses. Everything the game sizes for English therefore fits the Chinese as well:
++	// the 9-row status bar, the 10-row window title bar, dialogue boxes, dropdown items.
++	//
++	// This was tried on 2026-07-30 and rejected because the status bar came out broken (left
++	// half black, text clipped) — but that diagnosis never got past "suspect putFontPixel or
++	// the fill". Re-checked on 2026-08-07 against the current tree: with the forced upscale
++	// the status bar is clean in Chinese *and* in English. The breakage belonged to the
++	// status-bar drawing code of the time, which has since been rewritten (double-byte
++	// merging in DrawStatus, the menu bar rect, ASCII baseline alignment).
++	if (g_sci->getLanguage() == Common::ZH_TWN && _upscaledHires == GFX_SCREEN_UPSCALED_DISABLED)
++		_upscaledHires = GFX_SCREEN_UPSCALED_640x400;
++
  	// if not yet set, set those to script-width/height
  	if (!_width)
  		_width = _scriptWidth;
+@@ -544,6 +559,39 @@ int GfxScreen::bitsGetDataSize(Common::Rect rect, byte mask) {
+ 	return byteCount;
+ }
+ 
++// CHT: see the declaration in screen.h. rect is in screen coordinates (already offset by the
++// caller's port), colour1/colour2 are the two colours to swap — the pen and the background of
++// the port doing the highlighting.
++void GfxScreen::chtInvertRect(const Common::Rect &rect, byte color1, byte color2) {
++	for (int16 y = rect.top; y < rect.bottom; y++) {
++		if (y < 0 || y >= _height)
++			continue;
++		byte *row = _visualScreen + y * _width;
++		for (int16 x = MAX<int16>(rect.left, 0); x < MIN<int16>(rect.right, _width); x++) {
++			if (row[x] == color1)
++				row[x] = color2;
++			else if (row[x] == color2)
++				row[x] = color1;
++		}
++	}
++
++	// The display plane is inverted on its own so the Chinese glyphs, which live only here,
++	// flip along with the background instead of being repainted away.
++	const int16 dispTop = _upscaledHeightMapping[MAX<int16>(rect.top, 0)];
++	const int16 dispBottom = _upscaledHeightMapping[MIN<int16>(rect.bottom, _height)];
++	const int16 dispLeft = _upscaledWidthMapping[MAX<int16>(rect.left, 0)];
++	const int16 dispRight = _upscaledWidthMapping[MIN<int16>(rect.right, _width)];
++	for (int16 y = dispTop; y < dispBottom; y++) {
++		byte *row = _displayScreen + y * _displayWidth;
++		for (int16 x = dispLeft; x < dispRight; x++) {
++			if (row[x] == color1)
++				row[x] = color2;
++			else if (row[x] == color2)
++				row[x] = color1;
++		}
++	}
++}
++
+ void GfxScreen::bitsSave(Common::Rect rect, byte mask, byte *memoryPtr) {
+ 	memcpy(memoryPtr, (void *)&rect, sizeof(rect)); memoryPtr += sizeof(rect);
+ 	memcpy(memoryPtr, (void *)&mask, sizeof(mask)); memoryPtr += sizeof(mask);
 diff --git a/engines/sci/graphics/screen.h b/engines/sci/graphics/screen.h
-index eaed025a..8d45dcf7 100644
+index eaed025a..3e649a55 100644
 --- a/engines/sci/graphics/screen.h
 +++ b/engines/sci/graphics/screen.h
 @@ -78,6 +78,7 @@ public:
@@ -668,30 +547,23 @@ index eaed025a..8d45dcf7 100644
  	byte getColorWhite() { return _colorWhite; }
  	byte getColorDefaultVectorData() { return _colorDefaultVectorData; }
  
-@@ -151,6 +152,13 @@ public:
+@@ -151,6 +152,16 @@ public:
  	void setFontIsUpscaled(bool isUpscaled) { _fontIsUpscaled = isUpscaled; }
  	bool fontIsUpscaled() const { return _fontIsUpscaled; }
  
-+	// CHT: while a menu bar/dropdown is being drawn, force Chinese glyphs down the low-res
-+	// path so they land in the visual buffer and thus invert correctly on highlight. The
-+	// hi-res path writes straight to the display buffer, which invertRect (visual only) +
-+	// bitsShow (re-upscale) would wipe to a black-on-black (invisible) selection.
-+	void setMenuTextActive(bool active) { _menuTextActive = active; }
-+	bool menuTextActive() const { return _menuTextActive; }
++	// CHT: invert (highlight) a rect on both planes independently.
++	//
++	// The stock invert reads the visual plane and writes visual + display, which is fine while
++	// the two agree. They do not once Chinese is drawn: a Big5 glyph exists only in the display
++	// buffer (GfxFontChinese::drawHiRes), so a visual-driven invert repaints the display from a
++	// plane that never had the glyph — the highlighted menu item loses its text and comes back
++	// as a bare black bar. Swapping the two colours separately on each plane keeps the glyph and
++	// leaves the visual plane correct for later bitsSave/bitsRestore.
++	void chtInvertRect(const Common::Rect &rect, byte color1, byte color2);
 +
  	void grabPalette(byte *buffer, uint start, uint num) const;
  	void setPalette(const byte *buffer, uint start, uint num, bool update = true);
  
-@@ -249,6 +257,9 @@ private:
- 	 * to the screen size (and we therefore should not upscale it ourselves).
- 	 */
- 	bool _fontIsUpscaled;
-+	bool _menuTextActive = false;
-+	// CHT: true while the status bar draws — it is only 10 script rows tall, so Chinese must
-+	// use the compact 16x15 glyph instead of the 24px hi-res one or it gets clipped.
- 
- 
- 	// pixel related code, in header so that it can be inlined for performance
 diff --git a/engines/sci/graphics/text16.cpp b/engines/sci/graphics/text16.cpp
 index 9e5647f3..608bcbb8 100644
 --- a/engines/sci/graphics/text16.cpp

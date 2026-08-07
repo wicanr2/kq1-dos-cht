@@ -56,7 +56,12 @@ public:
 	void draw(uint16 chr, int16 top, int16 left, byte color, bool greyedOutput) override;
 
 private:
-	// 1:1 draw into the display buffer, for the fixed-height status bar on an upscaled display.
+	// True once the CHT 640x400 upscale is on (screen.cpp). Then a Big5 glyph is drawn at its
+	// native 16x15 pixels straight onto the display buffer, which is 8x8 in script coordinates
+	// — the same cell the original 8px English font occupies.
+	bool useHiRes() const;
+	// 1:1 draw into the display buffer. Returns false if the glyph is not in the font.
+	bool drawHiRes(uint16 point, int16 top, int16 left, byte color);
 
 	GfxScreen *_screen;
 	GuiResourceId _resourceId;
