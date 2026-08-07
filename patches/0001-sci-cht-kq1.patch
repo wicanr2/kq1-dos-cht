@@ -227,7 +227,7 @@ index aac0b3d3..43d8a7f7 100644
  		// SCI0early used xor to invert button rectangles resulting in pink/white buttons
  		// All PC-98 targets (both SCI_VERSION_01 and SCI_VERSION_1_LATE) also use the
 diff --git a/engines/sci/graphics/menu.cpp b/engines/sci/graphics/menu.cpp
-index cdabf3bf..a20d3c91 100644
+index cdabf3bf..57f949dd 100644
 --- a/engines/sci/graphics/menu.cpp
 +++ b/engines/sci/graphics/menu.cpp
 @@ -368,6 +368,9 @@ void GfxMenu::drawBar() {
@@ -266,8 +266,74 @@ index cdabf3bf..a20d3c91 100644
  
  	// Draw the black line again
  	_paint16->fillRect(_ports->_menuLine, 1, 0);
+@@ -1021,6 +1029,11 @@ GuiMenuItemEntry *GfxMenu::interactiveWithMouse() {
+ }
+ 
+ void GfxMenu::kernelDrawStatus(const char *text, int16 colorPen, int16 colorBack) {
++	// CHT: remember it so chtRestoreStatus() can put it back after a room change.
++	_chtStatusText = text ? text : "";
++	_chtStatusPen = colorPen;
++	_chtStatusBack = colorBack;
++
+ 	Port *oldPort = _ports->setPort(_ports->_menuPort);
+ 
+ 	_paint16->fillRect(_ports->_menuBarRect, 1, colorBack);
+@@ -1045,6 +1058,27 @@ void GfxMenu::kernelDrawStatus(const char *text, int16 colorPen, int16 colorBack
+ 	_ports->setPort(oldPort);
+ }
+ 
++// CHT: put the status line back after something drew over its bottom rows.
++//
++// The bar the Chinese font needs is 15 script rows tall (ports.cpp), but the game's picture
++// window starts at row 10 and every room picture paints rows 10-199. Whichever of the two
++// runs last wins, and on a room change that is the picture — the score line kept its top
++// two thirds and lost the rest (issue #1). There is no spare row anywhere: the screen is
++// 200 rows and the game owns 190 of them, so a 15-row bar has to cost the picture its top
++// five rows. Doing it here makes that cost constant instead of depending on draw order.
++//
++// Only restores a bar the game actually asked for: kernelDrawMenuBar(true) clears it via
++// kernelDrawStatus("", 0, 0), which empties the cache, so a game that hides the status line
++// (the title screen does) keeps its picture whole.
++void GfxMenu::chtRestoreStatus() {
++	if (g_sci->getLanguage() != Common::ZH_TWN || _chtStatusText.empty())
++		return;
++	// Copy first: kernelDrawStatus() assigns its argument back into _chtStatusText, and
++	// assigning a Common::String from its own buffer can free that buffer mid-copy.
++	const Common::String text(_chtStatusText);
++	kernelDrawStatus(text.c_str(), _chtStatusPen, _chtStatusBack);
++}
++
+ void GfxMenu::kernelDrawMenuBar(bool clear) {
+ 	if (!clear) {
+ 		Port *oldPort = _ports->setPort(_ports->_menuPort);
+diff --git a/engines/sci/graphics/menu.h b/engines/sci/graphics/menu.h
+index cf13f4d1..cacea090 100644
+--- a/engines/sci/graphics/menu.h
++++ b/engines/sci/graphics/menu.h
+@@ -93,6 +93,9 @@ public:
+ 	void kernelDrawStatus(const char *text, int16 colorPen, int16 colorBack);
+ 	void kernelDrawMenuBar(bool clear);
+ 
++	// CHT: re-draw the last status line the game asked for. See chtRestoreStatus() for why.
++	void chtRestoreStatus();
++
+ private:
+ 	GuiMenuItemEntry *findItem(uint16 menuId, uint16 itemId);
+ 	void calculateMenuWidth();
+@@ -127,6 +130,11 @@ private:
+ 	Common::Rect _menuRect;
+ 
+ 	bool _mouseOldState;
++
++	// CHT: last status line the game drew, so it can be put back after a picture wipes it.
++	Common::String _chtStatusText;
++	int16 _chtStatusPen = 0;
++	int16 _chtStatusBack = 0;
+ };
+ 
+ } // End of namespace Sci
 diff --git a/engines/sci/graphics/paint16.cpp b/engines/sci/graphics/paint16.cpp
-index 2e901e8d..a2abbcf8 100644
+index 2e901e8d..66c4b9f4 100644
 --- a/engines/sci/graphics/paint16.cpp
 +++ b/engines/sci/graphics/paint16.cpp
 @@ -19,6 +19,8 @@
@@ -279,7 +345,15 @@ index 2e901e8d..a2abbcf8 100644
  #include "sci/sci.h"
  #include "sci/engine/features.h"
  #include "sci/engine/state.h"
-@@ -47,7 +49,9 @@ GfxPaint16::GfxPaint16(ResourceManager *resMan, SegManager *segMan, GfxCache *ca
+@@ -29,6 +31,7 @@
+ #include "sci/graphics/ports.h"
+ #include "sci/graphics/paint16.h"
+ #include "sci/graphics/animate.h"
++#include "sci/graphics/menu.h"
+ #include "sci/graphics/scifont.h"
+ #include "sci/graphics/picture.h"
+ #include "sci/graphics/view.h"
+@@ -47,7 +50,9 @@ GfxPaint16::GfxPaint16(ResourceManager *resMan, SegManager *segMan, GfxCache *ca
  	: _resMan(resMan), _segMan(segMan), _cache(cache), _ports(ports),
  	  _coordAdjuster(coordAdjuster), _screen(screen), _palette(palette),
  	  _transitions(transitions), _audio(audio), _EGAdrawingVisualize(false),
@@ -290,7 +364,7 @@ index 2e901e8d..a2abbcf8 100644
  
  	// _animate and _text16 will be initialized later on
  	_animate = nullptr;
-@@ -88,6 +92,8 @@ void GfxPaint16::debugSetEGAdrawingVisualize(bool state) {
+@@ -88,6 +93,8 @@ void GfxPaint16::debugSetEGAdrawingVisualize(bool state) {
  }
  
  void GfxPaint16::drawPicture(GuiResourceId pictureId, bool mirroredFlag, bool addToFlag, GuiResourceId paletteId) {
@@ -299,7 +373,7 @@ index 2e901e8d..a2abbcf8 100644
  	// Set up custom per-picture palette mod
  	doCustomPicPalette(_screen, pictureId);
  
-@@ -106,6 +112,115 @@ void GfxPaint16::drawPicture(GuiResourceId pictureId, bool mirroredFlag, bool ad
+@@ -106,6 +113,121 @@ void GfxPaint16::drawPicture(GuiResourceId pictureId, bool mirroredFlag, bool ad
  
  	// Reset custom per-picture palette mod
  	_screen->setCurPaletteMapValue(0);
@@ -324,6 +398,12 @@ index 2e901e8d..a2abbcf8 100644
 +		drawChtTitleOverlay();
 +	else if (chtTitleWasActive)
 +		clearChtTitleOverlay();
++
++	// CHT: the picture just painted over the bottom rows of the Chinese status bar — it is
++	// 15 rows tall and the picture owns everything from row 10 down. Put it back (no-op when
++	// the game has no status line up). See GfxMenu::chtRestoreStatus.
++	if (g_sci->getLanguage() == Common::ZH_TWN && g_sci->_gfxMenu)
++		g_sci->_gfxMenu->chtRestoreStatus();
 +
 +	// CHT tooling: dump each drawn pic (display buffer + palette) as PPM, to identify
 +	// which resource holds baked-art UI labels. Triggered by SCI_DUMP_PIC=<dir>.
@@ -415,7 +495,7 @@ index 2e901e8d..a2abbcf8 100644
  }
  
  // This one is the only one that updates screen!
-@@ -121,6 +236,11 @@ void GfxPaint16::drawCelAndShow(GuiResourceId viewId, int16 loopNo, int16 celNo,
+@@ -121,6 +243,11 @@ void GfxPaint16::drawCelAndShow(GuiResourceId viewId, int16 loopNo, int16 celNo,
  
  		drawCel(view, loopNo, celNo, celRect, priority, paletteNo, scaleX, scaleY, scaleSignal);
  
@@ -427,7 +507,7 @@ index 2e901e8d..a2abbcf8 100644
  		if (getSciVersion() >= SCI_VERSION_1_1) {
  			if (!_screen->_picNotValidSci11) {
  				bitsShow(celRect);
-@@ -565,6 +685,16 @@ reg_t GfxPaint16::kernelDisplay(const char *text, uint16 languageSplitter, int a
+@@ -565,6 +692,16 @@ reg_t GfxPaint16::kernelDisplay(const char *text, uint16 languageSplitter, int a
  		rect.moveTo(_ports->getPort()->curLeft, _ports->getPort()->curTop);
  	}
  
@@ -613,7 +693,7 @@ index eaed025a..8d45dcf7 100644
  
  	// pixel related code, in header so that it can be inlined for performance
 diff --git a/engines/sci/graphics/text16.cpp b/engines/sci/graphics/text16.cpp
-index 9e5647f3..c95255e2 100644
+index 9e5647f3..608bcbb8 100644
 --- a/engines/sci/graphics/text16.cpp
 +++ b/engines/sci/graphics/text16.cpp
 @@ -19,6 +19,9 @@
@@ -690,7 +770,7 @@ index 9e5647f3..c95255e2 100644
  	Width(str.c_str(), 0, str.size(), orgFontId, textWidth, textHeight, true);
  }
  
-@@ -441,11 +476,65 @@ void GfxText16::ShowString(const Common::String &str, GuiResourceId orgFontId, i
+@@ -441,11 +476,75 @@ void GfxText16::ShowString(const Common::String &str, GuiResourceId orgFontId, i
  }
  #endif
  
@@ -705,8 +785,18 @@ index 9e5647f3..c95255e2 100644
 +// so the width test below leaves it alone. Vertical placement is left as it is: by this point
 +// the port's font height is already the Chinese one, so the English height is not recoverable,
 +// and a 15px glyph on a plate drawn for a 9px font overflows it whatever we do.
++//
++// [HARD] Restricted to the title screen. "The rect hugs its text" is not rare — every entry of
++// the inventory listing is built the same way (kTextSize per name, one control each, all sharing
++// rect.left) — and there the shift is pure damage: the names are meant to line up flush left,
++// but each one moves by half its own English/Chinese width difference, so 短刀/胡蘿蔔/幸運草/金蛋
++// end up at four different left edges (issue #1). The title entries are the only ones sitting on
++// a plate that is part of the background picture, i.e. the only ones with a fixed target to hit,
++// and _chtTitleActive marks exactly that screen.
 +int16 GfxText16::chtControlOffset(const char *text, const Common::Rect &rect, GuiResourceId fontId) {
 +	if (g_sci->getLanguage() != Common::ZH_TWN || !text)
++		return 0;
++	if (!_paint16 || !_paint16->_chtTitleActive)
 +		return 0;
 +	const char *translated = g_sci->getChtTranslation(text);
 +	if (!translated)
@@ -756,7 +846,7 @@ index 9e5647f3..c95255e2 100644
  	GuiResourceId previousFontId = GetFontId();
  	int16 previousPenColor = _ports->_curPort->penClr;
  	int16 maxTextWidth = 0, textWidth;
-@@ -569,6 +658,19 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
+@@ -569,6 +668,19 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
  	int16 textWidth, maxTextWidth, textHeight;
  	int16 offset = 0;
  	int16 hline = 0;
@@ -776,7 +866,7 @@ index 9e5647f3..c95255e2 100644
  	GuiResourceId previousFontId = GetFontId();
  	int16 previousPenColor = _ports->_curPort->penClr;
  	bool doubleByteMode = false;
-@@ -683,10 +785,18 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
+@@ -683,10 +795,18 @@ void GfxText16::Box(const char *text, uint16 languageSplitter, bool show, const
  	_ports->penColor(previousPenColor);
  }
  
@@ -796,7 +886,7 @@ index 9e5647f3..c95255e2 100644
  	Common::String text;
  	if (!g_sci->isLanguageRTL())
  		text = textOrig;
-@@ -700,11 +810,19 @@ void GfxText16::DrawString(const Common::String &textOrig) {
+@@ -700,11 +820,19 @@ void GfxText16::DrawString(const Common::String &textOrig) {
  
  // we need to have a separate status drawing code
  //  In KQ4 the IV char is actually 0xA, which would otherwise get considered as linebreak and not printed
@@ -817,7 +907,7 @@ index 9e5647f3..c95255e2 100644
  	Common::String str;
  	if (!g_sci->isLanguageRTL())
  		str = strOrig;
-@@ -719,6 +837,13 @@ void GfxText16::DrawStatus(const Common::String &strOrig) {
+@@ -719,6 +847,13 @@ void GfxText16::DrawStatus(const Common::String &strOrig) {
  	rect.bottom = rect.top + _ports->_curPort->fontHeight;
  	while (textLen--) {
  		uint16 curChar = *text++;

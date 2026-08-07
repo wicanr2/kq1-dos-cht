@@ -55,7 +55,12 @@ def fullwidthize(s):
     for i, ch in enumerate(s):
         prev = s[i - 1] if i > 0 else ""
         nxt = s[i + 1] if i + 1 < n else ""
-        if ch in HALF2FULL and (_is_cjk(prev) or _is_cjk(nxt)):
+        # 連續同一個半形標點是刻意的排版（"..." 刪節號、"!!" 加強語氣）。逐字看的話只有
+        # 第一個的前一字是中文，於是只有它被轉成全形，剩下的維持半形 —— 選單就長出
+        # 「音量。..」這種半轉半不轉的樣子（issue #1）。整串原樣留著才對。
+        if (ch == prev or ch == nxt) and (ch in HALF2FULL or ch == "."):
+            out.append(ch)
+        elif ch in HALF2FULL and (_is_cjk(prev) or _is_cjk(nxt)):
             out.append(HALF2FULL[ch])
         elif ch == "." and _is_cjk(prev) and not nxt.isdigit():
             out.append("。")  # 中文句末句號
